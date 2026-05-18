@@ -1,39 +1,82 @@
+// ============================================================================
+// APP.JSX - UJIAN AKHIR SEKOLAH SMP NEGERI 2 BUNGO
+// ============================================================================
+// FITUR:
+// ✅ Logo SMP Negeri 2 Bungo
+// ✅ Running Text di bagian atas
+// ✅ Login Admin dan Siswa
+// ✅ Dashboard Admin
+// ✅ Dashboard Siswa
+// ✅ Daftar kelas 7A-7I dan 8A-8I
+// ✅ Watermark pengembang
+// ============================================================================
+
 import React, { useState } from "react";
 
 // ============================================================================
 // KONFIGURASI SEKOLAH
 // ============================================================================
 
+// Simpan logo dengan nama ini di folder /public
 const LOGO_SEKOLAH = "/logo-smpn2-bungo.jpg";
 
+// Judul aplikasi
 const NAMA_APLIKASI = "UJIAN AKHIR SEKOLAH";
+
+// Nama sekolah
 const NAMA_SEKOLAH = "SMP NEGERI 2 BUNGO";
 
+// Running text
+const RUNNING_TEXT =
+  "📢 Portal Ujian Digital SMPN 2 Muara Bungo 2026 - Kejujuran Adalah Karakter Utama - Desain: Herman Saputra, S.Pd., Gr.";
+
+// Watermark
+const WATERMARK_1 = "Aplikasi Portal Ujian Digital v.2026";
+const WATERMARK_2 = "Pengembang: Herman Saputra, S.Pd., Gr.";
+
+// Daftar kelas
 const DAFTAR_KELAS = [
   "7A", "7B", "7C", "7D", "7E", "7F", "7G", "7H", "7I",
   "8A", "8B", "8C", "8D", "8E", "8F", "8G", "8H", "8I"
 ];
 
+// Akun Admin Default
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin123";
 
 // ============================================================================
-// APP
+// KOMPONEN UTAMA
 // ============================================================================
 
 export default function App() {
   const [halaman, setHalaman] = useState("login");
   const [modeLogin, setModeLogin] = useState("siswa");
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
   const [namaSiswa, setNamaSiswa] = useState("");
   const [kelasSiswa, setKelasSiswa] = useState("");
-
   const [pesan, setPesan] = useState("");
-
   const [userAktif, setUserAktif] = useState(null);
+
+  // Menambahkan animasi marquee sekali saja
+  if (
+    typeof document !== "undefined" &&
+    !document.getElementById("marquee-style")
+  ) {
+    const style = document.createElement("style");
+    style.id = "marquee-style";
+    style.innerHTML = `
+      @keyframes marquee {
+        0% {
+          transform: translateX(100%);
+        }
+        100% {
+          transform: translateX(-100%);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   // ==========================================================================
   // LOGIN
@@ -51,19 +94,18 @@ export default function App() {
           tipe: "admin",
           nama: "Administrator"
         });
-
         setHalaman("admin");
       } else {
-        setPesan("Username atau Password Admin Salah");
+        setPesan("Username atau password admin salah.");
       }
     } else {
-      if (!namaSiswa) {
-        setPesan("Nama siswa wajib diisi");
+      if (!namaSiswa.trim()) {
+        setPesan("Nama siswa wajib diisi.");
         return;
       }
 
       if (!kelasSiswa) {
-        setPesan("Silakan pilih kelas");
+        setPesan("Silakan pilih kelas.");
         return;
       }
 
@@ -77,13 +119,14 @@ export default function App() {
     }
   };
 
-  const logout = () => {
+  const handleLogout = () => {
     setHalaman("login");
     setUsername("");
     setPassword("");
     setNamaSiswa("");
     setKelasSiswa("");
     setPesan("");
+    setUserAktif(null);
   };
 
   // ==========================================================================
@@ -93,93 +136,86 @@ export default function App() {
   if (halaman === "login") {
     return (
       <div style={styles.container}>
-
         {/* RUNNING TEXT */}
-        <div style={styles.runningContainer}>
-          <marquee scrollamount="7">
-            📢 Portal Ujian Digital SMPN 2 Muara Bungo 2026 - 
-            Kejujuran Adalah Karakter Utama - 
-            Desain: Herman Saputra, S.Pd., Gr.
-          </marquee>
+        <div style={styles.marqueeWrapper}>
+          <div style={styles.marquee}>
+            {RUNNING_TEXT}
+          </div>
         </div>
 
+        {/* KARTU LOGIN */}
         <div style={styles.card}>
-
-          {/* LOGO */}
+          {/* LOGO SEKOLAH */}
           <img
             src={LOGO_SEKOLAH}
             alt="Logo SMP Negeri 2 Bungo"
             style={styles.logo}
           />
 
-          {/* NAMA */}
+          {/* JUDUL APLIKASI */}
           <h1 style={styles.title}>
             {NAMA_APLIKASI}
           </h1>
 
+          {/* NAMA SEKOLAH */}
           <h2 style={styles.subtitle}>
             {NAMA_SEKOLAH}
           </h2>
 
+          {/* GARIS PEMISAH */}
+          <div style={styles.divider}></div>
+
+          {/* DESKRIPSI */}
+          <p style={styles.description}>
+            Silakan pilih jenis login untuk melanjutkan
+          </p>
+
           {/* TAB LOGIN */}
           <div style={styles.tabContainer}>
-
             <button
               style={{
                 ...styles.tabButton,
-                ...(modeLogin === "siswa"
-                  ? styles.tabActive
-                  : {})
+                ...(modeLogin === "siswa" ? styles.tabActive : {})
               }}
               onClick={() => {
                 setModeLogin("siswa");
                 setPesan("");
               }}
             >
-              LOGIN SISWA
+              Login Siswa
             </button>
 
             <button
               style={{
                 ...styles.tabButton,
-                ...(modeLogin === "admin"
-                  ? styles.tabActive
-                  : {})
+                ...(modeLogin === "admin" ? styles.tabActive : {})
               }}
               onClick={() => {
                 setModeLogin("admin");
                 setPesan("");
               }}
             >
-              LOGIN ADMIN
+              Login Admin
             </button>
-
           </div>
 
-          {/* LOGIN SISWA */}
+          {/* FORM LOGIN SISWA */}
           {modeLogin === "siswa" && (
             <>
               <input
                 type="text"
                 placeholder="Nama Lengkap Siswa"
                 value={namaSiswa}
-                onChange={(e) =>
-                  setNamaSiswa(e.target.value)
-                }
+                onChange={(e) => setNamaSiswa(e.target.value)}
                 style={styles.input}
               />
 
               <select
                 value={kelasSiswa}
-                onChange={(e) =>
-                  setKelasSiswa(e.target.value)
-                }
+                onChange={(e) => setKelasSiswa(e.target.value)}
                 style={styles.input}
               >
-                <option value="">
-                  Pilih Kelas
-                </option>
-
+                <option value="">Pilih Kelas</option>
                 {DAFTAR_KELAS.map((kelas) => (
                   <option key={kelas} value={kelas}>
                     {kelas}
@@ -189,16 +225,14 @@ export default function App() {
             </>
           )}
 
-          {/* LOGIN ADMIN */}
+          {/* FORM LOGIN ADMIN */}
           {modeLogin === "admin" && (
             <>
               <input
                 type="text"
                 placeholder="Username Admin"
                 value={username}
-                onChange={(e) =>
-                  setUsername(e.target.value)
-                }
+                onChange={(e) => setUsername(e.target.value)}
                 style={styles.input}
               />
 
@@ -206,36 +240,32 @@ export default function App() {
                 type="password"
                 placeholder="Password Admin"
                 value={password}
-                onChange={(e) =>
-                  setPassword(e.target.value)
-                }
+                onChange={(e) => setPassword(e.target.value)}
                 style={styles.input}
               />
             </>
           )}
 
-          {/* PESAN */}
+          {/* PESAN ERROR */}
           {pesan && (
             <div style={styles.error}>
               {pesan}
             </div>
           )}
 
-          {/* BUTTON */}
+          {/* TOMBOL LOGIN */}
           <button
-            style={styles.loginButton}
             onClick={handleLogin}
+            style={styles.loginButton}
           >
-            MASUK KE SISTEM
+            Masuk ke Sistem
           </button>
+        </div>
 
-          {/* WATERMARK */}
-          <div style={styles.watermark}>
-            Aplikasi Portal Ujian Digital v.2026
-            <br />
-            Pengembang: Herman Saputra, S.Pd., Gr.
-          </div>
-
+        {/* WATERMARK */}
+        <div style={styles.watermark}>
+          <div>{WATERMARK_1}</div>
+          <div>{WATERMARK_2}</div>
         </div>
       </div>
     );
@@ -248,76 +278,63 @@ export default function App() {
   if (halaman === "admin") {
     return (
       <div style={styles.dashboard}>
-
         <header style={styles.header}>
           <div style={styles.headerLeft}>
-
             <img
               src={LOGO_SEKOLAH}
               alt="Logo"
               style={styles.headerLogo}
             />
-
             <div>
               <h2 style={styles.headerTitle}>
-                DASHBOARD ADMIN
+                Dashboard Admin
               </h2>
-
               <p style={styles.headerText}>
-                Ujian Akhir Sekolah SMP Negeri 2 Bungo
+                {NAMA_SEKOLAH}
               </p>
             </div>
-
           </div>
 
           <button
+            onClick={handleLogout}
             style={styles.logoutButton}
-            onClick={logout}
           >
             Logout
           </button>
         </header>
 
         <main style={styles.main}>
-
-          <h2>
-            Selamat Datang Administrator
-          </h2>
+          <h3>Selamat Datang, Administrator</h3>
+          <p>
+            Kelola ujian, siswa, kelas, dan soal melalui dashboard ini.
+          </p>
 
           <div style={styles.grid}>
-
-            <MenuCard
-              title="👨‍🎓 Data Siswa"
-              desc="Kelola data siswa"
+            <Card
+              title="👥 Data Siswa"
+              desc="Tambah dan kelola data siswa"
             />
-
-            <MenuCard
+            <Card
               title="🏫 Data Kelas"
-              desc="Kelas 7A - 8I"
+              desc="Kelas 7A–7I dan 8A–8I"
             />
-
-            <MenuCard
+            <Card
               title="📝 Bank Soal"
-              desc="Input soal ujian"
+              desc="Input dan edit soal ujian"
             />
-
-            <MenuCard
+            <Card
               title="📅 Jadwal Ujian"
-              desc="Atur jadwal ujian"
+              desc="Atur waktu pelaksanaan ujian"
             />
-
-            <MenuCard
-              title="📊 Nilai Siswa"
-              desc="Lihat hasil ujian"
+            <Card
+              title="📊 Hasil Ujian"
+              desc="Lihat nilai dan ranking"
             />
-
-            <MenuCard
+            <Card
               title="⚙️ Pengaturan"
-              desc="Pengaturan sistem"
+              desc="Konfigurasi aplikasi CBT"
             />
-
           </div>
-
         </main>
       </div>
     );
@@ -330,76 +347,56 @@ export default function App() {
   if (halaman === "siswa") {
     return (
       <div style={styles.dashboard}>
-
         <header style={styles.header}>
-
           <div style={styles.headerLeft}>
-
             <img
               src={LOGO_SEKOLAH}
               alt="Logo"
               style={styles.headerLogo}
             />
-
             <div>
               <h2 style={styles.headerTitle}>
-                DASHBOARD SISWA
+                Dashboard Siswa
               </h2>
-
               <p style={styles.headerText}>
-                Ujian Akhir Sekolah SMP Negeri 2 Bungo
+                {NAMA_SEKOLAH}
               </p>
             </div>
-
           </div>
 
           <button
+            onClick={handleLogout}
             style={styles.logoutButton}
-            onClick={logout}
           >
             Logout
           </button>
-
         </header>
 
         <main style={styles.main}>
-
-          <h2>
-            Selamat Datang,
-            {" "}
-            {userAktif?.nama}
-          </h2>
+          <h3>Selamat Datang, {userAktif?.nama}</h3>
 
           <p>
-            Kelas:
-            {" "}
-            <b>{userAktif?.kelas}</b>
+            Kelas: <strong>{userAktif?.kelas}</strong>
           </p>
 
           <div style={styles.grid}>
-
-            <MenuCard
+            <Card
               title="📝 Mulai Ujian"
-              desc="Kerjakan ujian"
+              desc="Kerjakan ujian yang tersedia"
             />
-
-            <MenuCard
-              title="📊 Hasil Ujian"
-              desc="Lihat nilai"
+            <Card
+              title="📘 Materi"
+              desc="Lihat materi pembelajaran"
             />
-
-            <MenuCard
-              title="📚 Materi"
-              desc="Materi pembelajaran"
+            <Card
+              title="📊 Nilai"
+              desc="Lihat hasil ujian"
             />
-
-            <MenuCard
+            <Card
               title="👤 Profil"
               desc="Data siswa"
             />
-
           </div>
-
         </main>
       </div>
     );
@@ -409,77 +406,100 @@ export default function App() {
 }
 
 // ============================================================================
-// MENU CARD
+// CARD COMPONENT
 // ============================================================================
 
-function MenuCard({ title, desc }) {
+function Card({ title, desc }) {
   return (
-    <div style={styles.menuCard}>
-      <h3>{title}</h3>
+    <div style={styles.cardMenu}>
+      <h4>{title}</h4>
       <p>{desc}</p>
     </div>
   );
 }
 
 // ============================================================================
-// STYLE
+// STYLES
 // ============================================================================
 
 const styles = {
-
   container: {
     minHeight: "100vh",
-    background:
-      "linear-gradient(135deg,#0f172a,#1e3a8a)",
+    background: "linear-gradient(135deg, #0ea5e9, #1e3a8a)",
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
     justifyContent: "center",
-    padding: "20px"
-  },
-
-  runningContainer: {
-    width: "100%",
-    background: "#facc15",
-    color: "#000",
-    padding: "10px",
-    fontWeight: "bold",
-    position: "fixed",
-    top: 0,
-    left: 0,
-    zIndex: 999
+    alignItems: "center",
+    padding: "80px 20px 40px"
   },
 
   card: {
     width: "100%",
-    maxWidth: "500px",
+    maxWidth: "900px",
     background: "#ffffff",
-    padding: "40px",
-    borderRadius: "25px",
-    boxShadow:
-      "0 20px 50px rgba(0,0,0,0.4)",
-    textAlign: "center",
-    marginTop: "80px"
+    borderRadius: "24px",
+    padding: "50px 40px",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+    textAlign: "center"
   },
 
   logo: {
-    width: "140px",
-    height: "140px",
+    width: "150px",
+    height: "150px",
     objectFit: "contain",
     marginBottom: "20px"
   },
 
   title: {
-    fontSize: "32px",
-    fontWeight: "bold",
-    marginBottom: "5px",
-    color: "#0f172a"
+    margin: 0,
+    fontSize: "52px",
+    fontWeight: "800",
+    color: "#0f172a",
+    letterSpacing: "1px"
   },
 
   subtitle: {
-    fontSize: "24px",
-    marginBottom: "30px",
-    color: "#334155"
+    marginTop: "8px",
+    marginBottom: "20px",
+    fontSize: "34px",
+    fontWeight: "700",
+    color: "#1e3a8a"
+  },
+
+  divider: {
+    width: "220px",
+    height: "4px",
+    background: "linear-gradient(90deg, #2563eb, #1d4ed8)",
+    margin: "0 auto 20px auto",
+    borderRadius: "999px"
+  },
+
+  description: {
+    color: "#475569",
+    marginBottom: "25px",
+    fontSize: "18px"
+  },
+
+  marqueeWrapper: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    background: "#0b3d91",
+    color: "#ffffff",
+    padding: "10px 0",
+    overflow: "hidden",
+    zIndex: 1000,
+    fontWeight: "bold",
+    fontSize: "16px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.15)"
+  },
+
+  marquee: {
+    whiteSpace: "nowrap",
+    display: "inline-block",
+    paddingLeft: "100%",
+    animation: "marquee 25s linear infinite"
   },
 
   tabContainer: {
@@ -490,18 +510,19 @@ const styles = {
 
   tabButton: {
     flex: 1,
-    padding: "14px",
+    padding: "12px",
     borderRadius: "10px",
-    border: "none",
-    background: "#e2e8f0",
+    border: "1px solid #cbd5e1",
+    background: "#f8fafc",
     cursor: "pointer",
     fontWeight: "bold",
-    fontSize: "15px"
+    fontSize: "16px"
   },
 
   tabActive: {
     background: "#2563eb",
-    color: "#ffffff"
+    color: "#ffffff",
+    borderColor: "#2563eb"
   },
 
   input: {
@@ -516,15 +537,14 @@ const styles = {
 
   loginButton: {
     width: "100%",
-    padding: "15px",
+    padding: "14px",
     border: "none",
-    borderRadius: "12px",
+    borderRadius: "10px",
     background: "#16a34a",
     color: "#ffffff",
-    fontSize: "17px",
+    fontSize: "18px",
     fontWeight: "bold",
-    cursor: "pointer",
-    marginTop: "10px"
+    cursor: "pointer"
   },
 
   error: {
@@ -532,19 +552,21 @@ const styles = {
     color: "#b91c1c",
     padding: "12px",
     borderRadius: "10px",
-    marginBottom: "10px"
+    marginBottom: "15px"
   },
 
   watermark: {
-    marginTop: "25px",
-    fontSize: "13px",
-    color: "#64748b",
-    lineHeight: "1.6"
+    marginTop: "30px",
+    textAlign: "center",
+    color: "#e2e8f0",
+    fontSize: "15px",
+    lineHeight: "1.8",
+    fontWeight: "500"
   },
 
   dashboard: {
     minHeight: "100vh",
-    background: "#f1f5f9"
+    background: "#f8fafc"
   },
 
   header: {
@@ -566,6 +588,7 @@ const styles = {
   headerLogo: {
     width: "60px",
     height: "60px",
+    objectFit: "contain",
     background: "#ffffff",
     borderRadius: "50%",
     padding: "5px"
@@ -584,30 +607,29 @@ const styles = {
     background: "#ef4444",
     color: "#ffffff",
     border: "none",
-    padding: "10px 20px",
-    borderRadius: "10px",
+    padding: "10px 18px",
+    borderRadius: "8px",
     cursor: "pointer",
     fontWeight: "bold"
   },
 
   main: {
-    padding: "30px"
+    padding: "30px",
+    maxWidth: "1200px",
+    margin: "0 auto"
   },
 
   grid: {
     display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit,minmax(250px,1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
     gap: "20px",
-    marginTop: "30px"
+    marginTop: "25px"
   },
 
-  menuCard: {
+  cardMenu: {
     background: "#ffffff",
     padding: "25px",
-    borderRadius: "20px",
-    boxShadow:
-      "0 10px 30px rgba(0,0,0,0.1)"
+    borderRadius: "16px",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.08)"
   }
-
 };
