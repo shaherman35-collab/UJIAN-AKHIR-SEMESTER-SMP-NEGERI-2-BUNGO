@@ -346,8 +346,8 @@ function LatexHelp() {
 // ============================================================
 // SUPABASE CONFIG — Ganti dengan kredensial Supabase Anda
 // ============================================================
-const SUPABASE_URL = "https://ehnazhgudaspeuolnwkj.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_xzh7S432JXwxMv8su63D0g_5KHCOmPY";
+const SUPABASE_URL = "https://wdmzabkbxtnywpbzjyvc.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_-2d_xQR8GdhKLRzkLFR1Zg_l1KnrDyK";
 
 async function supabase(path, options = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -3304,5 +3304,3 @@ function ResultScreen({ result, onBack }) {
     </div>
   );
 }
-
-
