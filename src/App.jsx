@@ -1,48 +1,38 @@
-// ============================================================================
-// APP.JSX - CBT SMP NEGERI 2 BUNGO
-// ============================================================================
-// FITUR:
-// ✅ Logo SMP Negeri 2 Bungo
-// ✅ Login Admin dan Siswa
-// ✅ Dashboard Admin
-// ✅ Dashboard Siswa
-// ✅ Daftar kelas 7A-7I dan 8A-8I
-// ✅ Tampilan modern dan responsif
-// ============================================================================
-
 import React, { useState } from "react";
 
 // ============================================================================
 // KONFIGURASI SEKOLAH
 // ============================================================================
 
-// GANTI DENGAN FILE LOGO DI FOLDER /public/logo-smpn2-bungo.jpg
 const LOGO_SEKOLAH = "/logo-smpn2-bungo.jpg";
 
+const NAMA_APLIKASI = "UJIAN AKHIR SEKOLAH";
 const NAMA_SEKOLAH = "SMP NEGERI 2 BUNGO";
-const NAMA_APLIKASI = "CBT Ujian Akhir Sekolah 2026";
 
 const DAFTAR_KELAS = [
   "7A", "7B", "7C", "7D", "7E", "7F", "7G", "7H", "7I",
   "8A", "8B", "8C", "8D", "8E", "8F", "8G", "8H", "8I"
 ];
 
-// Akun Admin Default
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin123";
 
 // ============================================================================
-// KOMPONEN UTAMA
+// APP
 // ============================================================================
 
 export default function App() {
   const [halaman, setHalaman] = useState("login");
   const [modeLogin, setModeLogin] = useState("siswa");
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
   const [namaSiswa, setNamaSiswa] = useState("");
   const [kelasSiswa, setKelasSiswa] = useState("");
+
   const [pesan, setPesan] = useState("");
+
   const [userAktif, setUserAktif] = useState(null);
 
   // ==========================================================================
@@ -61,18 +51,19 @@ export default function App() {
           tipe: "admin",
           nama: "Administrator"
         });
+
         setHalaman("admin");
       } else {
-        setPesan("Username atau password admin salah.");
+        setPesan("Username atau Password Admin Salah");
       }
     } else {
-      if (!namaSiswa.trim()) {
-        setPesan("Nama siswa wajib diisi.");
+      if (!namaSiswa) {
+        setPesan("Nama siswa wajib diisi");
         return;
       }
 
       if (!kelasSiswa) {
-        setPesan("Silakan pilih kelas.");
+        setPesan("Silakan pilih kelas");
         return;
       }
 
@@ -86,14 +77,13 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
+  const logout = () => {
     setHalaman("login");
     setUsername("");
     setPassword("");
     setNamaSiswa("");
     setKelasSiswa("");
     setPesan("");
-    setUserAktif(null);
   };
 
   // ==========================================================================
@@ -103,62 +93,93 @@ export default function App() {
   if (halaman === "login") {
     return (
       <div style={styles.container}>
+
+        {/* RUNNING TEXT */}
+        <div style={styles.runningContainer}>
+          <marquee scrollamount="7">
+            📢 Portal Ujian Digital SMPN 2 Muara Bungo 2026 - 
+            Kejujuran Adalah Karakter Utama - 
+            Desain: Herman Saputra, S.Pd., Gr.
+          </marquee>
+        </div>
+
         <div style={styles.card}>
+
+          {/* LOGO */}
           <img
             src={LOGO_SEKOLAH}
             alt="Logo SMP Negeri 2 Bungo"
             style={styles.logo}
           />
 
-          <h1 style={styles.title}>{NAMA_APLIKASI}</h1>
-          <h2 style={styles.subtitle}>{NAMA_SEKOLAH}</h2>
+          {/* NAMA */}
+          <h1 style={styles.title}>
+            {NAMA_APLIKASI}
+          </h1>
 
-          {/* Pilihan Login */}
+          <h2 style={styles.subtitle}>
+            {NAMA_SEKOLAH}
+          </h2>
+
+          {/* TAB LOGIN */}
           <div style={styles.tabContainer}>
+
             <button
               style={{
                 ...styles.tabButton,
-                ...(modeLogin === "siswa" ? styles.tabActive : {})
+                ...(modeLogin === "siswa"
+                  ? styles.tabActive
+                  : {})
               }}
               onClick={() => {
                 setModeLogin("siswa");
                 setPesan("");
               }}
             >
-              Login Siswa
+              LOGIN SISWA
             </button>
 
             <button
               style={{
                 ...styles.tabButton,
-                ...(modeLogin === "admin" ? styles.tabActive : {})
+                ...(modeLogin === "admin"
+                  ? styles.tabActive
+                  : {})
               }}
               onClick={() => {
                 setModeLogin("admin");
                 setPesan("");
               }}
             >
-              Login Admin
+              LOGIN ADMIN
             </button>
+
           </div>
 
-          {/* Form Login Siswa */}
+          {/* LOGIN SISWA */}
           {modeLogin === "siswa" && (
             <>
               <input
                 type="text"
                 placeholder="Nama Lengkap Siswa"
                 value={namaSiswa}
-                onChange={(e) => setNamaSiswa(e.target.value)}
+                onChange={(e) =>
+                  setNamaSiswa(e.target.value)
+                }
                 style={styles.input}
               />
 
               <select
                 value={kelasSiswa}
-                onChange={(e) => setKelasSiswa(e.target.value)}
+                onChange={(e) =>
+                  setKelasSiswa(e.target.value)
+                }
                 style={styles.input}
               >
-                <option value="">Pilih Kelas</option>
+                <option value="">
+                  Pilih Kelas
+                </option>
+
                 {DAFTAR_KELAS.map((kelas) => (
                   <option key={kelas} value={kelas}>
                     {kelas}
@@ -168,14 +189,16 @@ export default function App() {
             </>
           )}
 
-          {/* Form Login Admin */}
+          {/* LOGIN ADMIN */}
           {modeLogin === "admin" && (
             <>
               <input
                 type="text"
                 placeholder="Username Admin"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) =>
+                  setUsername(e.target.value)
+                }
                 style={styles.input}
               />
 
@@ -183,28 +206,36 @@ export default function App() {
                 type="password"
                 placeholder="Password Admin"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
                 style={styles.input}
               />
             </>
           )}
 
+          {/* PESAN */}
           {pesan && (
             <div style={styles.error}>
               {pesan}
             </div>
           )}
 
+          {/* BUTTON */}
           <button
-            onClick={handleLogin}
             style={styles.loginButton}
+            onClick={handleLogin}
           >
-            Masuk ke Sistem
+            MASUK KE SISTEM
           </button>
 
-          <p style={styles.footer}>
-            © 2026 SMP Negeri 2 Bungo
-          </p>
+          {/* WATERMARK */}
+          <div style={styles.watermark}>
+            Aplikasi Portal Ujian Digital v.2026
+            <br />
+            Pengembang: Herman Saputra, S.Pd., Gr.
+          </div>
+
         </div>
       </div>
     );
@@ -217,64 +248,76 @@ export default function App() {
   if (halaman === "admin") {
     return (
       <div style={styles.dashboard}>
+
         <header style={styles.header}>
           <div style={styles.headerLeft}>
+
             <img
               src={LOGO_SEKOLAH}
               alt="Logo"
               style={styles.headerLogo}
             />
+
             <div>
               <h2 style={styles.headerTitle}>
-                Dashboard Admin
+                DASHBOARD ADMIN
               </h2>
+
               <p style={styles.headerText}>
-                {NAMA_SEKOLAH}
+                Ujian Akhir Sekolah SMP Negeri 2 Bungo
               </p>
             </div>
+
           </div>
 
           <button
-            onClick={handleLogout}
             style={styles.logoutButton}
+            onClick={logout}
           >
             Logout
           </button>
         </header>
 
         <main style={styles.main}>
-          <h3>Selamat Datang, Administrator</h3>
-          <p>
-            Kelola ujian, siswa, kelas, dan soal
-            melalui dashboard ini.
-          </p>
+
+          <h2>
+            Selamat Datang Administrator
+          </h2>
 
           <div style={styles.grid}>
-            <Card
-              title="👥 Data Siswa"
-              desc="Tambah dan kelola data siswa"
+
+            <MenuCard
+              title="👨‍🎓 Data Siswa"
+              desc="Kelola data siswa"
             />
-            <Card
+
+            <MenuCard
               title="🏫 Data Kelas"
-              desc="Kelas 7A–7I dan 8A–8I"
+              desc="Kelas 7A - 8I"
             />
-            <Card
+
+            <MenuCard
               title="📝 Bank Soal"
-              desc="Input dan edit soal ujian"
+              desc="Input soal ujian"
             />
-            <Card
+
+            <MenuCard
               title="📅 Jadwal Ujian"
-              desc="Atur waktu pelaksanaan ujian"
+              desc="Atur jadwal ujian"
             />
-            <Card
-              title="📊 Hasil Ujian"
-              desc="Lihat nilai dan ranking"
+
+            <MenuCard
+              title="📊 Nilai Siswa"
+              desc="Lihat hasil ujian"
             />
-            <Card
+
+            <MenuCard
               title="⚙️ Pengaturan"
-              desc="Konfigurasi aplikasi CBT"
+              desc="Pengaturan sistem"
             />
+
           </div>
+
         </main>
       </div>
     );
@@ -287,58 +330,76 @@ export default function App() {
   if (halaman === "siswa") {
     return (
       <div style={styles.dashboard}>
+
         <header style={styles.header}>
+
           <div style={styles.headerLeft}>
+
             <img
               src={LOGO_SEKOLAH}
               alt="Logo"
               style={styles.headerLogo}
             />
+
             <div>
               <h2 style={styles.headerTitle}>
-                Dashboard Siswa
+                DASHBOARD SISWA
               </h2>
+
               <p style={styles.headerText}>
-                {NAMA_SEKOLAH}
+                Ujian Akhir Sekolah SMP Negeri 2 Bungo
               </p>
             </div>
+
           </div>
 
           <button
-            onClick={handleLogout}
             style={styles.logoutButton}
+            onClick={logout}
           >
             Logout
           </button>
+
         </header>
 
         <main style={styles.main}>
-          <h3>
-            Selamat Datang, {userAktif?.nama}
-          </h3>
+
+          <h2>
+            Selamat Datang,
+            {" "}
+            {userAktif?.nama}
+          </h2>
 
           <p>
-            Kelas: <strong>{userAktif?.kelas}</strong>
+            Kelas:
+            {" "}
+            <b>{userAktif?.kelas}</b>
           </p>
 
           <div style={styles.grid}>
-            <Card
+
+            <MenuCard
               title="📝 Mulai Ujian"
-              desc="Kerjakan ujian yang tersedia"
+              desc="Kerjakan ujian"
             />
-            <Card
-              title="📘 Materi"
-              desc="Lihat materi pembelajaran"
+
+            <MenuCard
+              title="📊 Hasil Ujian"
+              desc="Lihat nilai"
             />
-            <Card
-              title="📊 Nilai"
-              desc="Lihat hasil ujian"
+
+            <MenuCard
+              title="📚 Materi"
+              desc="Materi pembelajaran"
             />
-            <Card
+
+            <MenuCard
               title="👤 Profil"
               desc="Data siswa"
             />
+
           </div>
+
         </main>
       </div>
     );
@@ -348,59 +409,76 @@ export default function App() {
 }
 
 // ============================================================================
-// CARD COMPONENT
+// MENU CARD
 // ============================================================================
 
-function Card({ title, desc }) {
+function MenuCard({ title, desc }) {
   return (
-    <div style={styles.cardMenu}>
-      <h4>{title}</h4>
+    <div style={styles.menuCard}>
+      <h3>{title}</h3>
       <p>{desc}</p>
     </div>
   );
 }
 
 // ============================================================================
-// STYLES
+// STYLE
 // ============================================================================
 
 const styles = {
+
   container: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #0ea5e9, #1e3a8a)",
+    background:
+      "linear-gradient(135deg,#0f172a,#1e3a8a)",
     display: "flex",
-    justifyContent: "center",
+    flexDirection: "column",
     alignItems: "center",
+    justifyContent: "center",
     padding: "20px"
+  },
+
+  runningContainer: {
+    width: "100%",
+    background: "#facc15",
+    color: "#000",
+    padding: "10px",
+    fontWeight: "bold",
+    position: "fixed",
+    top: 0,
+    left: 0,
+    zIndex: 999
   },
 
   card: {
     width: "100%",
-    maxWidth: "480px",
+    maxWidth: "500px",
     background: "#ffffff",
-    borderRadius: "20px",
     padding: "40px",
-    boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-    textAlign: "center"
+    borderRadius: "25px",
+    boxShadow:
+      "0 20px 50px rgba(0,0,0,0.4)",
+    textAlign: "center",
+    marginTop: "80px"
   },
 
   logo: {
-    width: "120px",
-    height: "120px",
+    width: "140px",
+    height: "140px",
     objectFit: "contain",
     marginBottom: "20px"
   },
 
   title: {
-    margin: 0,
-    fontSize: "28px",
+    fontSize: "32px",
+    fontWeight: "bold",
+    marginBottom: "5px",
     color: "#0f172a"
   },
 
   subtitle: {
-    marginTop: "8px",
+    fontSize: "24px",
     marginBottom: "30px",
-    fontSize: "20px",
     color: "#334155"
   },
 
@@ -412,18 +490,18 @@ const styles = {
 
   tabButton: {
     flex: 1,
-    padding: "12px",
+    padding: "14px",
     borderRadius: "10px",
-    border: "1px solid #cbd5e1",
-    background: "#f8fafc",
+    border: "none",
+    background: "#e2e8f0",
     cursor: "pointer",
-    fontWeight: "bold"
+    fontWeight: "bold",
+    fontSize: "15px"
   },
 
   tabActive: {
     background: "#2563eb",
-    color: "#ffffff",
-    borderColor: "#2563eb"
+    color: "#ffffff"
   },
 
   input: {
@@ -438,14 +516,15 @@ const styles = {
 
   loginButton: {
     width: "100%",
-    padding: "14px",
+    padding: "15px",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "12px",
     background: "#16a34a",
     color: "#ffffff",
-    fontSize: "16px",
+    fontSize: "17px",
     fontWeight: "bold",
-    cursor: "pointer"
+    cursor: "pointer",
+    marginTop: "10px"
   },
 
   error: {
@@ -453,18 +532,19 @@ const styles = {
     color: "#b91c1c",
     padding: "12px",
     borderRadius: "10px",
-    marginBottom: "15px"
+    marginBottom: "10px"
   },
 
-  footer: {
-    marginTop: "20px",
-    fontSize: "14px",
-    color: "#64748b"
+  watermark: {
+    marginTop: "25px",
+    fontSize: "13px",
+    color: "#64748b",
+    lineHeight: "1.6"
   },
 
   dashboard: {
     minHeight: "100vh",
-    background: "#f8fafc"
+    background: "#f1f5f9"
   },
 
   header: {
@@ -486,7 +566,6 @@ const styles = {
   headerLogo: {
     width: "60px",
     height: "60px",
-    objectFit: "contain",
     background: "#ffffff",
     borderRadius: "50%",
     padding: "5px"
@@ -505,29 +584,30 @@ const styles = {
     background: "#ef4444",
     color: "#ffffff",
     border: "none",
-    padding: "10px 18px",
-    borderRadius: "8px",
+    padding: "10px 20px",
+    borderRadius: "10px",
     cursor: "pointer",
     fontWeight: "bold"
   },
 
   main: {
-    padding: "30px",
-    maxWidth: "1200px",
-    margin: "0 auto"
+    padding: "30px"
   },
 
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(250px,1fr))",
     gap: "20px",
-    marginTop: "25px"
+    marginTop: "30px"
   },
 
-  cardMenu: {
+  menuCard: {
     background: "#ffffff",
     padding: "25px",
-    borderRadius: "16px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.08)"
+    borderRadius: "20px",
+    boxShadow:
+      "0 10px 30px rgba(0,0,0,0.1)"
   }
+
 };
