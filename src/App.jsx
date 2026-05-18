@@ -14,7 +14,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 //   (B) base64: buka https://www.base64-image.de , upload logo,
 //       salin hasilnya (diawali "data:image/...") dan tempel di bawah.
 // Logo sebaiknya berbentuk persegi (mis. 256x256 px) agar tidak gepeng.
-const LOGO_SEKOLAH = "https://drive.google.com/file/d/10CJ2vNiBJRc5swf8zPRaK2nJjVaV5_zN/view?usp=sharing"
+const LOGO_SEKOLAH = "https:10CJ2vNiBJRc5swf8zPRaK2nJjVaV5_zN"
 // --- IDENTITAS SEKOLAH ----------------------------------------------------
 const CONFIG = {
   // Nama lengkap sekolah (tampil di JUDUL halaman login).
