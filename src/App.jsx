@@ -1,14 +1,13 @@
 // ============================================================================
-// APP.JSX - UJIAN AKHIR SEKOLAH SMP NEGERI 2 BUNGO
+// APP.JSX - CBT SMP NEGERI 2 BUNGO
 // ============================================================================
 // FITUR:
 // ✅ Logo SMP Negeri 2 Bungo
-// ✅ Running Text di bagian atas
 // ✅ Login Admin dan Siswa
 // ✅ Dashboard Admin
 // ✅ Dashboard Siswa
 // ✅ Daftar kelas 7A-7I dan 8A-8I
-// ✅ Watermark pengembang
+// ✅ Tampilan modern dan responsif
 // ============================================================================
 
 import React, { useState } from "react";
@@ -17,24 +16,12 @@ import React, { useState } from "react";
 // KONFIGURASI SEKOLAH
 // ============================================================================
 
-// Simpan logo dengan nama ini di folder /public
+// GANTI DENGAN FILE LOGO DI FOLDER /public/logo-smpn2-bungo.jpg
 const LOGO_SEKOLAH = "/logo-smpn2-bungo.jpg";
 
-// Judul aplikasi
-const NAMA_APLIKASI = "UJIAN AKHIR SEKOLAH";
-
-// Nama sekolah
 const NAMA_SEKOLAH = "SMP NEGERI 2 BUNGO";
+const NAMA_APLIKASI = "CBT Ujian Akhir Sekolah 2026";
 
-// Running text
-const RUNNING_TEXT =
-  "📢 Portal Ujian Digital SMPN 2 Muara Bungo 2026 - Kejujuran Adalah Karakter Utama - Desain: Herman Saputra, S.Pd., Gr.";
-
-// Watermark
-const WATERMARK_1 = "Aplikasi Portal Ujian Digital v.2026";
-const WATERMARK_2 = "Pengembang: Herman Saputra, S.Pd., Gr.";
-
-// Daftar kelas
 const DAFTAR_KELAS = [
   "7A", "7B", "7C", "7D", "7E", "7F", "7G", "7H", "7I",
   "8A", "8B", "8C", "8D", "8E", "8F", "8G", "8H", "8I"
@@ -57,26 +44,6 @@ export default function App() {
   const [kelasSiswa, setKelasSiswa] = useState("");
   const [pesan, setPesan] = useState("");
   const [userAktif, setUserAktif] = useState(null);
-
-  // Menambahkan animasi marquee sekali saja
-  if (
-    typeof document !== "undefined" &&
-    !document.getElementById("marquee-style")
-  ) {
-    const style = document.createElement("style");
-    style.id = "marquee-style";
-    style.innerHTML = `
-      @keyframes marquee {
-        0% {
-          transform: translateX(100%);
-        }
-        100% {
-          transform: translateX(-100%);
-        }
-      }
-    `;
-    document.head.appendChild(style);
-  }
 
   // ==========================================================================
   // LOGIN
@@ -136,41 +103,17 @@ export default function App() {
   if (halaman === "login") {
     return (
       <div style={styles.container}>
-        {/* RUNNING TEXT */}
-        <div style={styles.marqueeWrapper}>
-          <div style={styles.marquee}>
-            {RUNNING_TEXT}
-          </div>
-        </div>
-
-        {/* KARTU LOGIN */}
         <div style={styles.card}>
-          {/* LOGO SEKOLAH */}
           <img
             src={LOGO_SEKOLAH}
             alt="Logo SMP Negeri 2 Bungo"
             style={styles.logo}
           />
 
-          {/* JUDUL APLIKASI */}
-          <h1 style={styles.title}>
-            {NAMA_APLIKASI}
-          </h1>
+          <h1 style={styles.title}>{NAMA_APLIKASI}</h1>
+          <h2 style={styles.subtitle}>{NAMA_SEKOLAH}</h2>
 
-          {/* NAMA SEKOLAH */}
-          <h2 style={styles.subtitle}>
-            {NAMA_SEKOLAH}
-          </h2>
-
-          {/* GARIS PEMISAH */}
-          <div style={styles.divider}></div>
-
-          {/* DESKRIPSI */}
-          <p style={styles.description}>
-            Silakan pilih jenis login untuk melanjutkan
-          </p>
-
-          {/* TAB LOGIN */}
+          {/* Pilihan Login */}
           <div style={styles.tabContainer}>
             <button
               style={{
@@ -199,7 +142,7 @@ export default function App() {
             </button>
           </div>
 
-          {/* FORM LOGIN SISWA */}
+          {/* Form Login Siswa */}
           {modeLogin === "siswa" && (
             <>
               <input
@@ -225,7 +168,7 @@ export default function App() {
             </>
           )}
 
-          {/* FORM LOGIN ADMIN */}
+          {/* Form Login Admin */}
           {modeLogin === "admin" && (
             <>
               <input
@@ -246,26 +189,22 @@ export default function App() {
             </>
           )}
 
-          {/* PESAN ERROR */}
           {pesan && (
             <div style={styles.error}>
               {pesan}
             </div>
           )}
 
-          {/* TOMBOL LOGIN */}
           <button
             onClick={handleLogin}
             style={styles.loginButton}
           >
             Masuk ke Sistem
           </button>
-        </div>
 
-        {/* WATERMARK */}
-        <div style={styles.watermark}>
-          <div>{WATERMARK_1}</div>
-          <div>{WATERMARK_2}</div>
+          <p style={styles.footer}>
+            © 2026 SMP Negeri 2 Bungo
+          </p>
         </div>
       </div>
     );
@@ -306,7 +245,8 @@ export default function App() {
         <main style={styles.main}>
           <h3>Selamat Datang, Administrator</h3>
           <p>
-            Kelola ujian, siswa, kelas, dan soal melalui dashboard ini.
+            Kelola ujian, siswa, kelas, dan soal
+            melalui dashboard ini.
           </p>
 
           <div style={styles.grid}>
@@ -373,7 +313,9 @@ export default function App() {
         </header>
 
         <main style={styles.main}>
-          <h3>Selamat Datang, {userAktif?.nama}</h3>
+          <h3>
+            Selamat Datang, {userAktif?.nama}
+          </h3>
 
           <p>
             Kelas: <strong>{userAktif?.kelas}</strong>
@@ -427,79 +369,39 @@ const styles = {
     minHeight: "100vh",
     background: "linear-gradient(135deg, #0ea5e9, #1e3a8a)",
     display: "flex",
-    flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    padding: "80px 20px 40px"
+    padding: "20px"
   },
 
   card: {
     width: "100%",
-    maxWidth: "900px",
+    maxWidth: "480px",
     background: "#ffffff",
-    borderRadius: "24px",
-    padding: "50px 40px",
+    borderRadius: "20px",
+    padding: "40px",
     boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
     textAlign: "center"
   },
 
   logo: {
-    width: "150px",
-    height: "150px",
+    width: "120px",
+    height: "120px",
     objectFit: "contain",
     marginBottom: "20px"
   },
 
   title: {
     margin: 0,
-    fontSize: "52px",
-    fontWeight: "800",
-    color: "#0f172a",
-    letterSpacing: "1px"
+    fontSize: "28px",
+    color: "#0f172a"
   },
 
   subtitle: {
     marginTop: "8px",
-    marginBottom: "20px",
-    fontSize: "34px",
-    fontWeight: "700",
-    color: "#1e3a8a"
-  },
-
-  divider: {
-    width: "220px",
-    height: "4px",
-    background: "linear-gradient(90deg, #2563eb, #1d4ed8)",
-    margin: "0 auto 20px auto",
-    borderRadius: "999px"
-  },
-
-  description: {
-    color: "#475569",
-    marginBottom: "25px",
-    fontSize: "18px"
-  },
-
-  marqueeWrapper: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100%",
-    background: "#0b3d91",
-    color: "#ffffff",
-    padding: "10px 0",
-    overflow: "hidden",
-    zIndex: 1000,
-    fontWeight: "bold",
-    fontSize: "16px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.15)"
-  },
-
-  marquee: {
-    whiteSpace: "nowrap",
-    display: "inline-block",
-    paddingLeft: "100%",
-    animation: "marquee 25s linear infinite"
+    marginBottom: "30px",
+    fontSize: "20px",
+    color: "#334155"
   },
 
   tabContainer: {
@@ -515,8 +417,7 @@ const styles = {
     border: "1px solid #cbd5e1",
     background: "#f8fafc",
     cursor: "pointer",
-    fontWeight: "bold",
-    fontSize: "16px"
+    fontWeight: "bold"
   },
 
   tabActive: {
@@ -542,7 +443,7 @@ const styles = {
     borderRadius: "10px",
     background: "#16a34a",
     color: "#ffffff",
-    fontSize: "18px",
+    fontSize: "16px",
     fontWeight: "bold",
     cursor: "pointer"
   },
@@ -555,13 +456,10 @@ const styles = {
     marginBottom: "15px"
   },
 
-  watermark: {
-    marginTop: "30px",
-    textAlign: "center",
-    color: "#e2e8f0",
-    fontSize: "15px",
-    lineHeight: "1.8",
-    fontWeight: "500"
+  footer: {
+    marginTop: "20px",
+    fontSize: "14px",
+    color: "#64748b"
   },
 
   dashboard: {
@@ -633,3 +531,4 @@ const styles = {
     boxShadow: "0 10px 30px rgba(0,0,0,0.08)"
   }
 };
+
