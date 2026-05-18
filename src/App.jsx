@@ -14,7 +14,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 //   (B) base64: buka https://www.base64-image.de , upload logo,
 //       salin hasilnya (diawali "data:image/...") dan tempel di bawah.
 // Logo sebaiknya berbentuk persegi (mis. 256x256 px) agar tidak gepeng.
-const LOGO_SEKOLAH = "https://ibb.co.com/2fLvpz6"
+const LOGO_SEKOLAH = "https://i.ibb.co.com/j9wK28zs/372010179-6501626043266182-7133954058962688501-n.jpg" alt="Logo SMPN 2 Muara Bungo" style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 3px solid white; margin-bottom: 10px;">"
 // --- IDENTITAS SEKOLAH ----------------------------------------------------
 const CONFIG = {
   // Nama lengkap sekolah (tampil di JUDUL halaman login).
