@@ -27,7 +27,7 @@ const CONFIG = {
   // Teks kecil di bawah judul halaman login.
   subtitle: "Platform Ujian Digital",
   // Logo (jangan diubah — ambil dari LOGO_SEKOLAH di atas).
-  logoUrl: LOGO_SEKOLAH,
+  logoUrl: LOGO_SEKOLAH,"/logo-smpn2-bungo.jpg";
 };
 
 // --- DAFTAR KELAS ---------------------------------------------------------
