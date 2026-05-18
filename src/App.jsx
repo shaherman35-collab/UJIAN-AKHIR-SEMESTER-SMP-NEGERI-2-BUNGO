@@ -19,11 +19,11 @@ const LOGO_SEKOLAH = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
 // --- IDENTITAS SEKOLAH ----------------------------------------------------
 const CONFIG = {
   // Nama lengkap sekolah (tampil di JUDUL halaman login).
-  namaSekolah: "SMPN 7 Tanah Sepenggal",
+  namaSekolah: "SMP NEGERI 2 BUNGO",
   // Nama singkat (tampil di SIDEBAR dashboard guru, baris atas).
-  namaSekolahSingkat: "SMPN 7",
+  namaSekolahSingkat: "SMPN 2",
   // Lokasi / keterangan (tampil di SIDEBAR, baris bawah).
-  lokasiSekolah: "Tanah Sepenggal",
+  lokasiSekolah: "BUNGO",
   // Teks kecil di bawah judul halaman login.
   subtitle: "Platform Ujian Digital",
   // Logo (jangan diubah — ambil dari LOGO_SEKOLAH di atas).
@@ -34,7 +34,7 @@ const CONFIG = {
 // Sesuaikan dengan kelas di sekolah Anda. Format: "Label Grup": ["kelas", ...]
 // Boleh menambah/menghapus grup maupun kelas.
 const DAFTAR_KELAS = {
-  "Kelas VII": ["VII-1", "VII-2", "VII-3"],
+  "Kelas VII": ["VII-A", "VII-B", "VII-C", "VII-D"],
   "Kelas VIII": ["VIII-1", "VIII-2", "VIII-3"],
   "Kelas IX": ["IX-1", "IX-2", "IX-3"],
 };
