@@ -2321,7 +2321,53 @@ function SoalPage({ ujianList, onRefresh }) {
               ))
             )}
           </div>
+           {/* Info card Google Form sudah ditambahkan */}
+            {soalList.length === 0 && (() => { const u = ujianList.find(u => String(u.id) === selectedUjian); return u?.google_form_url; })() && (
+              <div style={{background:"linear-gradient(135deg,#d1fae5 0%,#a7f3d0 100%)", border:"2px solid #6ee7b7", borderRadius:"var(--radius2)", padding:"20px", marginBottom:"8px", display:"flex", flexDirection:"column", alignItems:"center", gap:"10px", textAlign:"center"}}>
+                <div style={{fontSize:"48px"}}>✅</div>
+                <div style={{fontSize:"16px", fontWeight:"800", color:"#065f46"}}>Link Google Form Telah Ditambahkan!</div>
+                <div style={{fontSize:"13px", color:"#047857", fontWeight:"500", maxWidth:"400px", lineHeight:"1.6"}}>
+                  Soal ujian menggunakan Google Form. Siswa akan mengerjakan ujian langsung dari Google Form yang telah Anda atur.
+                </div>
+                <div style={{background:"white", borderRadius:"8px", padding:"10px 18px", fontSize:"12px", color:"#065f46", fontFamily:"monospace", wordBreak:"break-all", border:"1px solid #6ee7b7", maxWidth:"100%"}}>
+                  🔗 {(() => { const u = ujianList.find(u => String(u.id) === selectedUjian); return u?.google_form_url || ""; })()}
+                </div>
+                <div style={{fontSize:"12px", color:"#6b7280", marginTop:"4px"}}>
+                  Untuk mengganti link, buka tab <strong>🔗 Upload Link Google Form</strong> dan simpan link baru.
+                </div>
+              </div>
+            )}
 
+            {soalList.length === 0 && !(() => { const u = ujianList.find(u => String(u.id) === selectedUjian); return u?.google_form_url; })() ? (
+              <div className="empty-state"><div className="icon">✏️</div><p>Belum ada soal. Tambahkan soal di atas.</p></div>
+            ) : soalList.length > 0 ? (
+              soalList.map((s, idx) => (
+                <div key={s.id} style={{border:`2px solid ${editSoal?.id === s.id ? "var(--yellow)" : "var(--border)"}`, borderRadius:"var(--radius2)", padding:"16px", marginBottom:"12px", background: editSoal?.id === s.id ? "var(--yellow3)" : "white"}}>
+                  <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:"12px", fontWeight:"700", color:"var(--blue)", marginBottom:"6px"}}>SOAL {idx+1} {editSoal?.id === s.id ? "— ✏️ Sedang Diedit" : ""}</div>
+                      {s.gambar && (
+                        <div style={{marginBottom:"8px", borderRadius:"6px", overflow:"hidden", border:"1px solid var(--border)", maxHeight:"120px", display:"flex", alignItems:"center", background:"var(--light)"}}>
+                          <img src={s.gambar} alt="gambar soal" style={{maxHeight:"120px", objectFit:"contain", width:"100%"}} onError={e => e.target.style.display="none"} />
+                        </div>
+                      )}
+                      <div style={{fontSize:"14px", fontWeight:"500", marginBottom:"10px"}}><MathText text={s.pertanyaan} /></div>
+                      <div style={{display:"flex", gap:"8px", flexWrap:"wrap"}}>
+                        {s.opsi.map((o,i) => (
+                          <span key={i} style={{fontSize:"12px", padding:"3px 10px", borderRadius:"99px", background: i === s.jawaban ? "var(--green3)" : "var(--light)", color: i === s.jawaban ? "var(--green2)" : "var(--gray)", fontWeight: i === s.jawaban ? "700" : "500"}}>
+                            {HURUF[i]}. <MathText text={o} />
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{display:"flex", flexDirection:"column", gap:"6px", marginLeft:"12px"}}>
+                      <button className="btn btn-ghost" style={{fontSize:"12px"}} onClick={() => handleEdit(s)}>✏️ Edit</button>
+                      <button className="btn btn-red" style={{fontSize:"12px"}} onClick={() => handleDelete(s.id)}>🗑️</button>
+                    </div>
+                  </div>
+                </div>
+              ))
+        
           {/* Modal Konfirmasi Hapus Semua */}
           {hapusSemua && (
             <div className="modal-overlay">
