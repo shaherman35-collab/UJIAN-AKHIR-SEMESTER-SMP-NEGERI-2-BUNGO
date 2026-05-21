@@ -34,9 +34,9 @@ const CONFIG = {
 // Sesuaikan dengan kelas di sekolah Anda. Format: "Label Grup": ["kelas", ...]
 // Boleh menambah/menghapus grup maupun kelas.
 const DAFTAR_KELAS = {
-  "Kelas 7": ["7A", "7B", "7C", "7D", "7E", "7F"],
-  "Kelas 8": ["8A", "8B", "8C", "8D", "8E", "8F"],
-  "Kelas 9": ["9A", "9B", "9C", "9D", "9E", "9F"],
+  "Kelas 7": ["7"],
+  "Kelas 8": ["8"],
+  "Kelas 9": ["9"],
 };
 
 
@@ -917,8 +917,10 @@ function LoginScreen({ onGuruLogin, onStudentJoin }) {
           ujian = { ...data[0], soal: soalParsed };
         }
       }
-      if (!ujian || !ujian.soal || ujian.soal.length === 0) {
-        setError("Kode ujian tidak ditemukan, ujian tidak aktif, atau belum ada soal.");
+      if (!ujian) {
+        setError("Kode ujian tidak ditemukan atau ujian tidak aktif.");
+      } else if (!ujian.google_form_url && (!ujian.soal || ujian.soal.length === 0)) {
+        setError("Kode ujian ditemukan, tetapi belum ada soal yang ditambahkan. Hubungi guru.");
       } else {
         // Cek jadwal jam buka/tutup
         if (ujian.jam_buka || ujian.jam_tutup) {
@@ -1341,28 +1343,13 @@ function UjianPage({ ujianList, onRefresh }) {
                 <select value={form.kelas} onChange={e => setForm(p=>({...p, kelas: e.target.value}))}>
                   <option value="">-- Pilih Kelas --</option>
                   <optgroup label="Kelas 7">
-                    <option value="7A">7A</option>
-                    <option value="7B">7B</option>
-                    <option value="7C">7C</option>
-                    <option value="7D">7D</option>
-                    <option value="7E">7E</option>
-                    <option value="7F">7F</option>
+                    <option value="7">7</option>
                   </optgroup>
                   <optgroup label="Kelas 8">
-                    <option value="8A">8A</option>
-                    <option value="8B">8B</option>
-                    <option value="8C">8C</option>
-                    <option value="8D">8D</option>
-                    <option value="8E">8E</option>
-                    <option value="8F">8F</option>
+                    <option value="8">8</option>
                   </optgroup>
                   <optgroup label="Kelas 9">
-                    <option value="9A">9A</option>
-                    <option value="9B">9B</option>
-                    <option value="9C">9C</option>
-                    <option value="9D">9D</option>
-                    <option value="9E">9E</option>
-                    <option value="9F">9F</option>
+                    <option value="9">9</option>
                   </optgroup>
                 </select>
               </div>
@@ -2214,15 +2201,30 @@ function SoalPage({ ujianList, onRefresh }) {
                     if (useDemo) {
                       const idx = DEMO_UJIAN.findIndex(u => String(u.id) === selectedUjian);
                       if (idx > -1) DEMO_UJIAN[idx].google_form_url = googleFormUrl;
+                      setGoogleFormSaved(true);
+                      setTimeout(() => onRefresh(), 500);
+                      alert("✅ Link Google Form berhasil disimpan ke ujian ini!");
                     } else {
                       supabase("ujian?id=eq." + selectedUjian, {
                         method: "PATCH",
                         body: JSON.stringify({ google_form_url: googleFormUrl })
-                      }).then(() => onRefresh()).catch(e => alert("Gagal simpan: " + e.message));
+                      }).then(() => {
+                        setGoogleFormSaved(true);
+                        onRefresh();
+                        alert("✅ Link Google Form berhasil disimpan ke ujian ini!");
+                      }).catch(e => {
+                        if (e.message && e.message.includes("google_form_url")) {
+                          alert(
+                            "❌ Kolom 'google_form_url' belum ada di database Supabase.\n\n" +
+                            "Silakan jalankan SQL berikut di Supabase Dashboard → SQL Editor:\n\n" +
+                            "ALTER TABLE ujian ADD COLUMN IF NOT EXISTS google_form_url TEXT;\n\n" +
+                            "Setelah dijalankan, coba simpan lagi."
+                          );
+                        } else {
+                          alert("Gagal simpan: " + e.message);
+                        }
+                      });
                     }
-                    setGoogleFormSaved(true);
-                    setTimeout(() => onRefresh(), 500);
-                    alert("✅ Link Google Form berhasil disimpan ke ujian ini!");
                   }}
                 >
                   💾 Simpan Link ke Ujian
@@ -2235,6 +2237,15 @@ function SoalPage({ ujianList, onRefresh }) {
               </div>
               <div style={{marginTop:"12px", padding:"12px 16px", background:"var(--yellow3)", borderRadius:"var(--radius2)", fontSize:"12px", color:"#92400e"}}>
                 <strong>⚠️ Penting:</strong> Saat siswa mengerjakan Google Form, ujian akan ditampilkan <strong>fullscreen dalam aplikasi ini</strong>. Siswa tidak bisa membuka tab lain atau keluar dari ujian. Deteksi kecurangan tetap aktif.
+              </div>
+              <div style={{marginTop:"12px", padding:"14px 16px", background:"#1e1e2e", borderRadius:"var(--radius2)", fontSize:"12px", color:"#cdd6f4"}}>
+                <div style={{fontWeight:"700", marginBottom:"8px", color:"#89b4fa"}}>🛠️ Jika muncul error "Could not find google_form_url column" — jalankan SQL ini di Supabase:</div>
+                <div style={{fontFamily:"monospace", background:"#11111b", padding:"10px 12px", borderRadius:"6px", color:"#a6e3a1", fontSize:"11px", userSelect:"all", cursor:"text", lineHeight:"1.8"}}>
+                  ALTER TABLE ujian ADD COLUMN IF NOT EXISTS google_form_url TEXT;
+                </div>
+                <div style={{marginTop:"8px", color:"#a6adc8", fontSize:"11px"}}>
+                  Cara: Buka Supabase Dashboard → klik <strong style={{color:"#cba6f7"}}>SQL Editor</strong> → tempel perintah di atas → klik <strong style={{color:"#a6e3a1"}}>Run</strong>. Setelah itu coba simpan lagi.
+                </div>
               </div>
             </div>
           )}
