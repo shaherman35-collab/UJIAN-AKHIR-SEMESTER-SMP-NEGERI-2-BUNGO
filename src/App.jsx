@@ -1462,6 +1462,9 @@ function SoalPage({ ujianList, onRefresh }) {
     if (selectedUjian) {
       const u = ujianList.find(u => String(u.id) === selectedUjian);
       setSoalList(u?.soal || []);
+      // Sync Google Form URL dari ujian yang dipilih
+      setGoogleFormUrl(u?.google_form_url || "");
+      setGoogleFormSaved(!!(u?.google_form_url));
     }
   }, [selectedUjian, ujianList]);
 
@@ -2289,8 +2292,8 @@ function SoalPage({ ujianList, onRefresh }) {
                 </div>
               </div>
             )}
-            
-           {/* Info card Google Form sudah ditambahkan */}
+
+            {/* Info card Google Form sudah ditambahkan */}
             {soalList.length === 0 && (() => { const u = ujianList.find(u => String(u.id) === selectedUjian); return u?.google_form_url; })() && (
               <div style={{background:"linear-gradient(135deg,#d1fae5 0%,#a7f3d0 100%)", border:"2px solid #6ee7b7", borderRadius:"var(--radius2)", padding:"20px", marginBottom:"8px", display:"flex", flexDirection:"column", alignItems:"center", gap:"10px", textAlign:"center"}}>
                 <div style={{fontSize:"48px"}}>✅</div>
@@ -2336,7 +2339,9 @@ function SoalPage({ ujianList, onRefresh }) {
                   </div>
                 </div>
               ))
-        
+            ) : null}
+          </div>
+
           {/* Modal Konfirmasi Hapus Semua */}
           {hapusSemua && (
             <div className="modal-overlay">
