@@ -1515,6 +1515,292 @@ function GuruDashboard({ guru, onLogout }) {
     </div>
   );
 }
+function PengumumanPage() {
+  const [list, setList]       = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [kirimLoading, setKirimLoading] = useState(false);
+  const [pesan, setPesan]     = useState("");
+  const [tipe, setTipe]       = useState("info");
+  const [sukses, setSukses]   = useState("");
+  const [error, setError]     = useState("");
+  const [confirmHapus, setConfirmHapus] = useState(null); // id yang akan dihapus
+ 
+  // ── Load daftar pengumuman ──
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (useDemo) {
+        // demo: simpan di memori saja
+        setList(window._demoPengumuman || []);
+      } else {
+        const rows = await supabase("pengumuman?order=id.desc&limit=50");
+        setList(rows || []);
+      }
+    } catch (e) {
+      setError("Gagal memuat pengumuman: " + e.message);
+    }
+    setLoading(false);
+  }, []);
+ 
+  useEffect(() => { loadData(); }, [loadData]);
+ 
+  // ── Kirim pengumuman baru ──
+  const handleKirim = async () => {
+    if (!pesan.trim()) { setError("Tulis pesan terlebih dahulu."); return; }
+    setKirimLoading(true);
+    setError(""); setSukses("");
+    try {
+      if (useDemo) {
+        const baru = { id: Date.now(), pesan: pesan.trim(), tipe, created_at: new Date().toISOString() };
+        window._demoPengumuman = [baru, ...(window._demoPengumuman || [])];
+        // BroadcastChannel — kirim ke tab siswa yang sama
+        try {
+          const bc = new BroadcastChannel("pengumuman_channel");
+          bc.postMessage(baru);
+          bc.close();
+        } catch {}
+      } else {
+        await supabase("pengumuman", {
+          method: "POST",
+          body: JSON.stringify({ pesan: pesan.trim(), tipe }),
+        });
+      }
+      setPesan("");
+      setSukses("✅ Pengumuman berhasil dikirim ke seluruh siswa!");
+      setTimeout(() => setSukses(""), 4000);
+      await loadData();
+    } catch (e) {
+      setError("Gagal kirim: " + e.message);
+    }
+    setKirimLoading(false);
+  };
+ 
+  // ── Hapus satu pengumuman ──
+  const handleHapus = async (id) => {
+    setError("");
+    try {
+      if (useDemo) {
+        window._demoPengumuman = (window._demoPengumuman || []).filter(p => p.id !== id);
+      } else {
+        await supabase(`pengumuman?id=eq.${id}`, { method: "DELETE" });
+      }
+      setConfirmHapus(null);
+      await loadData();
+    } catch (e) {
+      setError("Gagal hapus: " + e.message);
+    }
+  };
+ 
+  // ── Hapus semua pengumuman ──
+  const handleHapusSemua = async () => {
+    if (!window.confirm("Hapus SEMUA pengumuman? Tindakan ini tidak bisa dibatalkan.")) return;
+    setError("");
+    try {
+      if (useDemo) {
+        window._demoPengumuman = [];
+      } else {
+        // Hapus semua: filter id > 0 (semua baris)
+        await supabase("pengumuman?id=gt.0", { method: "DELETE" });
+      }
+      await loadData();
+    } catch (e) {
+      setError("Gagal hapus semua: " + e.message);
+    }
+  };
+ 
+  // ── Label & warna per tipe ──
+  const tipeConfig = {
+    info:    { label: "📢 Info",    bg: "#eff6ff", border: "#3b82f6", color: "#1d4ed8" },
+    warning: { label: "⚠️ Peringatan", bg: "#fffbeb", border: "#f59e0b", color: "#b45309" },
+    success: { label: "✅ Sukses",  bg: "#f0fdf4", border: "#22c55e", color: "#15803d" },
+    token:   { label: "🔑 Token",   bg: "#faf5ff", border: "#a855f7", color: "#7e22ce" },
+  };
+ 
+  const formatWaktu = (iso) => {
+    if (!iso) return "-";
+    return new Date(iso).toLocaleString("id-ID", {
+      day: "2-digit", month: "short", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  };
+ 
+  return (
+    <>
+      <div className="page-header">
+        <h1>📢 Pengumuman</h1>
+        <p>Kirim pesan ke seluruh siswa secara real-time</p>
+      </div>
+ 
+      {/* ── Form kirim pengumuman ── */}
+      <div className="card">
+        <div className="card-header"><h2>✉️ Kirim Pengumuman Baru</h2></div>
+ 
+        {error  && <div style={{background:"#fef2f2", border:"1px solid #fca5a5", borderRadius:"var(--radius2)", padding:"10px 14px", marginBottom:"12px", color:"#b91c1c", fontSize:"13px"}}>{error}</div>}
+        {sukses && <div style={{background:"#f0fdf4", border:"1px solid #86efac", borderRadius:"var(--radius2)", padding:"10px 14px", marginBottom:"12px", color:"#15803d", fontSize:"13px"}}>{sukses}</div>}
+ 
+        <div style={{display:"flex", gap:"12px", flexWrap:"wrap", alignItems:"flex-start"}}>
+          {/* Tipe */}
+          <div className="form-field" style={{minWidth:"160px", marginBottom:0}}>
+            <label>Tipe Pesan</label>
+            <select
+              value={tipe}
+              onChange={e => setTipe(e.target.value)}
+              style={{padding:"8px 12px", border:"1.5px solid var(--border)", borderRadius:"var(--radius2)", fontSize:"13px", background:"white", width:"100%"}}
+            >
+              {Object.entries(tipeConfig).map(([k, v]) => (
+                <option key={k} value={k}>{v.label}</option>
+              ))}
+            </select>
+          </div>
+ 
+          {/* Pesan */}
+          <div className="form-field" style={{flex:1, minWidth:"220px", marginBottom:0}}>
+            <label>Isi Pesan</label>
+            <textarea
+              value={pesan}
+              onChange={e => setPesan(e.target.value)}
+              placeholder="Tulis pengumuman untuk siswa..."
+              rows={3}
+              style={{
+                width:"100%", padding:"8px 12px",
+                border:"1.5px solid var(--border)", borderRadius:"var(--radius2)",
+                fontSize:"13px", resize:"vertical", fontFamily:"var(--font)",
+                lineHeight:1.5,
+              }}
+            />
+          </div>
+ 
+          {/* Tombol kirim */}
+          <div style={{display:"flex", alignItems:"flex-end", paddingBottom:"2px"}}>
+            <button
+              className="btn btn-blue"
+              style={{padding:"10px 22px", fontSize:"14px", fontWeight:"700"}}
+              onClick={handleKirim}
+              disabled={kirimLoading || !pesan.trim()}
+            >
+              {kirimLoading ? "⏳ Mengirim..." : "📤 Kirim"}
+            </button>
+          </div>
+        </div>
+ 
+        {/* Preview tampilan */}
+        {pesan.trim() && (
+          <div style={{marginTop:"16px"}}>
+            <div style={{fontSize:"12px", color:"var(--gray)", marginBottom:"6px", fontWeight:"600"}}>Preview tampilan siswa:</div>
+            <div style={{
+              background: tipeConfig[tipe].bg,
+              border: `1.5px solid ${tipeConfig[tipe].border}`,
+              borderRadius:"12px", padding:"12px 16px",
+              display:"flex", alignItems:"center", gap:"10px",
+            }}>
+              <span style={{fontSize:"22px"}}>{tipeConfig[tipe].label.split(" ")[0]}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:"10px", fontWeight:"700", color: tipeConfig[tipe].color, letterSpacing:1, textTransform:"uppercase", marginBottom:2}}>Pengumuman Admin</div>
+                <div style={{fontSize:"13px", color: tipeConfig[tipe].color, fontWeight:"600"}}>{pesan}</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+ 
+      {/* ── Daftar pengumuman ── */}
+      <div className="card">
+        <div className="card-header" style={{flexWrap:"wrap", gap:"10px"}}>
+          <h2>🗂️ Riwayat Pengumuman ({list.length})</h2>
+          <div style={{display:"flex", gap:"8px"}}>
+            <button className="btn btn-ghost" style={{fontSize:"12px"}} onClick={loadData} disabled={loading}>
+              {loading ? "..." : "🔄 Refresh"}
+            </button>
+            {list.length > 0 && (
+              <button
+                className="btn btn-red"
+                style={{fontSize:"12px"}}
+                onClick={handleHapusSemua}
+              >
+                🗑️ Hapus Semua
+              </button>
+            )}
+          </div>
+        </div>
+ 
+        {loading ? (
+          <div style={{textAlign:"center", padding:"32px", color:"var(--gray)"}}>Memuat...</div>
+        ) : list.length === 0 ? (
+          <div className="empty-state">
+            <div className="icon">📭</div>
+            <p>Belum ada pengumuman yang dikirim.</p>
+          </div>
+        ) : (
+          <div style={{display:"flex", flexDirection:"column", gap:"10px"}}>
+            {list.map(p => {
+              const cfg = tipeConfig[p.tipe] || tipeConfig.info;
+              return (
+                <div key={p.id} style={{
+                  background: cfg.bg,
+                  border: `1.5px solid ${cfg.border}`,
+                  borderRadius:"10px",
+                  padding:"12px 16px",
+                  display:"flex",
+                  alignItems:"flex-start",
+                  gap:"12px",
+                }}>
+                  <span style={{fontSize:"22px", flexShrink:0}}>{cfg.label.split(" ")[0]}</span>
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{
+                      display:"flex", alignItems:"center", gap:"8px",
+                      flexWrap:"wrap", marginBottom:"4px",
+                    }}>
+                      <span style={{
+                        fontSize:"11px", fontWeight:"700",
+                        color: cfg.color, background:"white",
+                        border: `1px solid ${cfg.border}`,
+                        padding:"1px 8px", borderRadius:"99px",
+                      }}>
+                        {cfg.label}
+                      </span>
+                      <span style={{fontSize:"11px", color:"var(--gray)"}}>
+                        {formatWaktu(p.created_at)}
+                      </span>
+                    </div>
+                    <div style={{fontSize:"14px", color:"#1e293b", lineHeight:1.5, wordBreak:"break-word"}}>
+                      {p.pesan}
+                    </div>
+                  </div>
+ 
+                  {/* Tombol hapus per item */}
+                  {confirmHapus === p.id ? (
+                    <div style={{display:"flex", gap:"6px", flexShrink:0, alignItems:"center"}}>
+                      <span style={{fontSize:"12px", color:"var(--red2)", fontWeight:"600"}}>Yakin?</span>
+                      <button
+                        className="btn btn-red"
+                        style={{fontSize:"11px", padding:"4px 10px"}}
+                        onClick={() => handleHapus(p.id)}
+                      >Ya</button>
+                      <button
+                        className="btn btn-ghost"
+                        style={{fontSize:"11px", padding:"4px 10px"}}
+                        onClick={() => setConfirmHapus(null)}
+                      >Batal</button>
+                    </div>
+                  ) : (
+                    <button
+                      className="btn btn-ghost"
+                      style={{fontSize:"12px", padding:"4px 10px", flexShrink:0, color:"var(--red2)", borderColor:"var(--red)"}}
+                      onClick={() => setConfirmHapus(p.id)}
+                      title="Hapus pengumuman ini"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
 
 // ---- Dashboard Overview ----
 function DashboardPage({ ujianList, hasilList }) {
