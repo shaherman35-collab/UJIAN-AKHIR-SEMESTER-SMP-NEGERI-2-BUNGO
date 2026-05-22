@@ -931,9 +931,6 @@ function CircularTimer({ timeLeft, totalTime, paused }) {
 // NOTIFIKASI LIVE — HOOK + TOAST + SUPABASE REALTIME POLLING
 // ============================================================
 
-// Polling setiap 4 detik untuk notifikasi baru dari admin
-// Untuk Supabase mode: query tabel "pengumuman" (buat tabel jika belum ada)
-// Untuk demo mode: gunakan BroadcastChannel
 function useNotifikasi() {
   const [notifs, setNotifs] = useState([]);
   const [lastId, setLastId] = useState(0);
@@ -943,7 +940,6 @@ function useNotifikasi() {
     let interval = null;
 
     if (useDemo) {
-      // BroadcastChannel: antar tab di browser yang sama
       try {
         bc = new BroadcastChannel("pengumuman_channel");
         bc.onmessage = (e) => {
@@ -952,7 +948,6 @@ function useNotifikasi() {
         };
       } catch {}
     } else {
-      // Polling Supabase setiap 4 detik
       const poll = async () => {
         try {
           const rows = await supabase(
@@ -986,7 +981,8 @@ function useNotifikasi() {
   return { notifs, hapus };
 }
 
-// Toast notif untuk siswa (muncul di atas layar)
+// ── Toast notif untuk siswa saat mengerjakan ujian ──
+// (tidak diubah — latar ujian sudah gelap, warna sudah oke)
 function NotifToast({ notifs, hapus }) {
   if (!notifs.length) return null;
   const tipeStyle = {
@@ -1023,28 +1019,48 @@ function NotifToast({ notifs, hapus }) {
   );
 }
 
-// Panel notif kecil di halaman login (terlihat semua siswa)
+// ── Banner notif di halaman login (latar PUTIH) ──
+// Perbaikan: warna teks gelap agar terbaca di latar putih
 function NotifBanner({ notifs, hapus }) {
   if (!notifs.length) return null;
   const latest = notifs[0];
-  const tipeColor = { info: "#3b82f6", warning: "#f59e0b", success: "#22c55e", token: "#a855f7" };
-  const tipeIcon  = { info: "📢", warning: "⚠️", success: "✅", token: "🔑" };
+
+  const tipeConfig = {
+    info:    { bg: "#eff6ff", border: "#3b82f6", labelColor: "#1d4ed8", textColor: "#1e3a5f", icon: "📢" },
+    warning: { bg: "#fffbeb", border: "#f59e0b", labelColor: "#b45309", textColor: "#78350f", icon: "⚠️" },
+    success: { bg: "#f0fdf4", border: "#22c55e", labelColor: "#15803d", textColor: "#14532d", icon: "✅" },
+    token:   { bg: "#faf5ff", border: "#a855f7", labelColor: "#7e22ce", textColor: "#4a1d96", icon: "🔑" },
+  };
+
+  const s = tipeConfig[latest.tipe] || tipeConfig.info;
+
   return (
     <div style={{
-      background: "rgba(255,255,255,0.08)", backdropFilter: "blur(8px)",
-      border: `1.5px solid ${tipeColor[latest.tipe] || tipeColor.info}`,
-      borderRadius: 12, padding: "12px 16px", marginTop: 16,
-      display: "flex", alignItems: "center", gap: 10,
+      background: s.bg,
+      border: `1.5px solid ${s.border}`,
+      borderRadius: 12,
+      padding: "12px 16px",
+      marginTop: 16,
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
       animation: "_fadeIn 0.3s ease",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
     }}>
-      <span style={{ fontSize: 22 }}>{tipeIcon[latest.tipe] || tipeIcon.info}</span>
+      <span style={{ fontSize: 22, flexShrink: 0 }}>{s.icon}</span>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: tipeColor[latest.tipe] || tipeColor.info, letterSpacing: 1, textTransform: "uppercase", marginBottom: 2 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: s.labelColor, letterSpacing: 1, textTransform: "uppercase", marginBottom: 2 }}>
           Pengumuman Admin
         </div>
-        <div style={{ fontSize: 13, color: "#fff", fontWeight: 500 }}>{latest.pesan}</div>
+        <div style={{ fontSize: 13, color: s.textColor, fontWeight: 600 }}>
+          {latest.pesan}
+        </div>
       </div>
-      <button onClick={() => hapus(latest.id)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 18 }}>✕</button>
+      <button
+        onClick={() => hapus(latest.id)}
+        style={{ background: "none", border: "none", color: s.labelColor, cursor: "pointer", fontSize: 18, opacity: 0.6, flexShrink: 0 }}
+        aria-label="Tutup pengumuman"
+      >✕</button>
     </div>
   );
 }
