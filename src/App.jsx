@@ -1731,9 +1731,6 @@ function NotifikasiPage() {
   const [riwayat, setRiwayat] = useState([]);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [confirmHapusSemua, setConfirmHapusSemua] = useState(false);
-  const [hapusSuaLoading, setHapusSuaLoading] = useState(false);
 
   useEffect(() => {
     if (!useDemo) {
@@ -1767,39 +1764,6 @@ function NotifikasiPage() {
     }
     setPesan("");
     setSending(false);
-  };
-
-  const handleHapus = async (id) => {
-    setDeletingId(id);
-    if (useDemo) {
-      setRiwayat(prev => prev.filter(r => r.id !== id));
-    } else {
-      try {
-        await supabase(`pengumuman?id=eq.${id}`, { method: "DELETE", prefer: "return=minimal" });
-        setRiwayat(prev => prev.filter(r => r.id !== id));
-      } catch (e) {
-        alert("Gagal hapus: " + e.message);
-      }
-    }
-    setDeletingId(null);
-  };
-
-  const handleHapusSemua = async () => {
-    setHapusSuaLoading(true);
-    if (useDemo) {
-      setRiwayat([]);
-    } else {
-      try {
-        // Hapus semua pengumuman yang ada di riwayat saat ini
-        const ids = riwayat.map(r => r.id);
-        await supabase(`pengumuman?id=in.(${ids.join(",")})`, { method: "DELETE", prefer: "return=minimal" });
-        setRiwayat([]);
-      } catch (e) {
-        alert("Gagal hapus semua: " + e.message);
-      }
-    }
-    setHapusSuaLoading(false);
-    setConfirmHapusSemua(false);
   };
 
   const tipeOpts = [
@@ -1885,46 +1849,7 @@ function NotifikasiPage() {
 
         {/* Riwayat */}
         <div style={{background:"#fff", borderRadius:16, padding:24, boxShadow:"0 2px 12px rgba(0,0,0,0.07)", border:"1px solid #f0f0f0"}}>
-          <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16}}>
-            <h3 style={{fontSize:15, fontWeight:700, color:"#1e293b", margin:0}}>🕓 Riwayat Pengumuman</h3>
-            {riwayat.length > 0 && (
-              <button
-                onClick={() => setConfirmHapusSemua(true)}
-                style={{
-                  padding:"5px 12px", borderRadius:8, border:"1.5px solid #fca5a5",
-                  background:"#fff1f2", color:"#ef4444", fontSize:12, fontWeight:700,
-                  cursor:"pointer", display:"flex", alignItems:"center", gap:5,
-                }}
-              >
-                🗑️ Hapus Semua
-              </button>
-            )}
-          </div>
-
-          {/* Konfirmasi hapus semua */}
-          {confirmHapusSemua && (
-            <div style={{background:"#fff1f2", border:"1.5px solid #fca5a5", borderRadius:10, padding:"12px 14px", marginBottom:14}}>
-              <p style={{fontSize:13, color:"#991b1b", fontWeight:600, margin:"0 0 10px"}}>
-                ⚠️ Hapus semua {riwayat.length} riwayat pengumuman? Tindakan ini tidak bisa dibatalkan.
-              </p>
-              <div style={{display:"flex", gap:8}}>
-                <button
-                  onClick={handleHapusSemua}
-                  disabled={hapusSuaLoading}
-                  style={{padding:"7px 16px", borderRadius:8, border:"none", background:"#ef4444", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer"}}
-                >
-                  {hapusSuaLoading ? "Menghapus..." : "Ya, Hapus Semua"}
-                </button>
-                <button
-                  onClick={() => setConfirmHapusSemua(false)}
-                  style={{padding:"7px 16px", borderRadius:8, border:"1.5px solid #e2e8f0", background:"#fff", color:"#475569", fontSize:13, fontWeight:700, cursor:"pointer"}}
-                >
-                  Batal
-                </button>
-              </div>
-            </div>
-          )}
-
+          <h3 style={{fontSize:15, fontWeight:700, marginBottom:16, color:"#1e293b"}}>🕓 Riwayat Pengumuman</h3>
           {riwayat.length === 0 ? (
             <div style={{textAlign:"center", padding:"32px 0", color:"#cbd5e1"}}>
               <div style={{fontSize:32, marginBottom:8}}>📭</div>
@@ -1936,7 +1861,6 @@ function NotifikasiPage() {
                 <div key={i} style={{
                   padding:"10px 14px", borderRadius:10, border:"1px solid #f1f5f9",
                   background:"#f8fafc", display:"flex", gap:10, alignItems:"flex-start",
-                  opacity: deletingId === r.id ? 0.5 : 1, transition:"opacity 0.2s",
                 }}>
                   <span style={{fontSize:18, flexShrink:0}}>{tipeIcon[r.tipe] || "📢"}</span>
                   <div style={{flex:1}}>
@@ -1945,27 +1869,12 @@ function NotifikasiPage() {
                       {new Date(r.created_at).toLocaleString("id-ID",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"short"})}
                     </div>
                   </div>
-                  <div style={{display:"flex", alignItems:"center", gap:8, flexShrink:0}}>
-                    <span style={{
-                      fontSize:9, fontWeight:700, padding:"2px 8px", borderRadius:99,
-                      background:`${tipeColor[r.tipe]||tipeColor.info}20`,
-                      color: tipeColor[r.tipe] || tipeColor.info,
-                      textTransform:"uppercase", letterSpacing:0.5,
-                    }}>{r.tipe}</span>
-                    <button
-                      onClick={() => handleHapus(r.id)}
-                      disabled={deletingId === r.id}
-                      title="Hapus pengumuman ini"
-                      style={{
-                        width:26, height:26, borderRadius:6, border:"1.5px solid #fca5a5",
-                        background:"#fff1f2", color:"#ef4444", fontSize:13, fontWeight:700,
-                        cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
-                        flexShrink:0, lineHeight:1,
-                      }}
-                    >
-                      {deletingId === r.id ? "…" : "✕"}
-                    </button>
-                  </div>
+                  <span style={{
+                    fontSize:9, fontWeight:700, padding:"2px 8px", borderRadius:99,
+                    background:`${tipeColor[r.tipe]||tipeColor.info}20`,
+                    color: tipeColor[r.tipe] || tipeColor.info,
+                    textTransform:"uppercase", letterSpacing:0.5, flexShrink:0,
+                  }}>{r.tipe}</span>
                 </div>
               ))}
             </div>
