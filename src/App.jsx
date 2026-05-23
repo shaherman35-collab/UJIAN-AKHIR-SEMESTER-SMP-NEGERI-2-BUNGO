@@ -838,40 +838,44 @@ let useDemo = SUPABASE_URL.includes("YOUR_PROJECT");
 
 function useLiveChatMessages() {
   const [msgs, setMsgs] = useState([]);
+  const lastIdRef = useRef(0);
+  const loadedRef = useRef(false);
 
-  // Load dari Supabase saat mount
+  const rowToMsg = (r) => ({
+    id: r.id,
+    tipe: r.tipe || "info",
+    pesan: r.pesan,
+    waktu: new Date(r.created_at).toLocaleTimeString("id-ID", { hour:"2-digit", minute:"2-digit" }),
+  });
+
+  // Polling setiap 3 detik — sekaligus load awal
   useEffect(() => {
     if (useDemo) return;
-    supabase("live_chat?order=id.asc&limit=30")
-      .then(rows => {
-        if (rows && rows.length) setMsgs(rows.map(r => ({
-          id: r.id, tipe: r.tipe, pesan: r.pesan,
-          waktu: new Date(r.created_at).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}),
-        })));
-      })
-      .catch(() => {});
-  }, []);
 
-  // Polling setiap 3 detik untuk pesan baru
-  useEffect(() => {
-    if (useDemo) return;
-    let lastId = 0;
     const poll = async () => {
       try {
-        const rows = await supabase(`live_chat?order=id.asc${lastId ? `&id=gt.${lastId}` : "&limit=30"}`);
-        if (rows && rows.length) {
-          lastId = rows[rows.length - 1].id;
-          setMsgs(prev => {
-            const ids = new Set(prev.map(m => m.id));
-            const baru = rows.filter(r => !ids.has(r.id)).map(r => ({
-              id: r.id, tipe: r.tipe, pesan: r.pesan,
-              waktu: new Date(r.created_at).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}),
-            }));
-            return baru.length ? [...prev, ...baru].slice(-30) : prev;
-          });
+        let url;
+        if (!loadedRef.current) {
+          url = "live_chat?order=id.asc&limit=30";
+        } else {
+          url = `live_chat?order=id.asc&id=gt.${lastIdRef.current}`;
         }
-      } catch {}
+        const rows = await supabase(url);
+        if (rows && rows.length > 0) {
+          lastIdRef.current = rows[rows.length - 1].id;
+          if (!loadedRef.current) {
+            setMsgs(rows.map(rowToMsg));
+          } else {
+            setMsgs(prev => [...prev, ...rows.map(rowToMsg)].slice(-30));
+          }
+        }
+        loadedRef.current = true;
+      } catch (e) {
+        console.error("[LiveChat] polling error:", e.message);
+        loadedRef.current = true;
+      }
     };
+
     poll();
     const iv = setInterval(poll, 3000);
     return () => clearInterval(iv);
@@ -949,7 +953,7 @@ function LiveChatAdmin() {
       } catch {}
     } else {
       try {
-        await supabase(`live_chat?id=eq.${id}`, { method: "DELETE", prefer: "return=minimal" });
+        await supabase(`live_chat?id=eq.${id}`, { method: "DELETE" });
         setMsgs(prev => prev.filter(m => m.id !== id));
       } catch(e) { alert("Gagal hapus: " + e.message); }
     }
@@ -966,7 +970,7 @@ function LiveChatAdmin() {
       } catch {}
     } else {
       try {
-        await supabase("live_chat", { method: "DELETE", prefer: "return=minimal" });
+        await supabase("live_chat?id=gt.0", { method: "DELETE" });
         setMsgs([]);
       } catch(e) { alert("Gagal hapus semua: " + e.message); }
     }
@@ -1053,63 +1057,69 @@ function LiveChatAdmin() {
 // ── Panel Siswa: hanya baca, muncul di pojok kanan bawah ──
 function LiveChatSiswa() {
   const { msgs } = useLiveChatMessages();
-  const [minimized, setMinimized] = useState(false);
+  const [open, setOpen] = useState(false);
   const [lastSeen, setLastSeen] = useState(0);
   const msgsEndRef = useRef(null);
   const unread = msgs.length - lastSeen;
 
+  // Auto-buka panel kalau ada pesan baru masuk
   useEffect(() => {
-    if (!minimized) {
-      setLastSeen(msgs.length);
-      msgsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (msgs.length > lastSeen) {
+      setOpen(true);
     }
-  }, [msgs, minimized]);
+  }, [msgs.length]); // eslint-disable-line
 
-  if (msgs.length === 0 && minimized) return null;
-  if (msgs.length === 0) return null;
+  useEffect(() => {
+    if (open) {
+      setLastSeen(msgs.length);
+      setTimeout(() => msgsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  }, [msgs, open]);
 
   const msgClass = { token:"lc-msg-token", info:"lc-msg-info", warning:"lc-msg-warning", success:"lc-msg-success" };
   const msgLabel = { token:"🔑 Token Ujian", info:"📢 Pengumuman", warning:"⚠️ Peringatan", success:"✅ Informasi" };
 
   return (
     <div className="livechat-siswa-wrap">
-      {!minimized && (
+      {open && (
         <div className="livechat-siswa-panel">
           <div className="livechat-siswa-header">
             <div className="livechat-header-dot" />
-            <span style={{color:"white",fontSize:"13px",fontWeight:700,flex:1}}>Pengumuman Guru</span>
-            <button className="livechat-minimize-btn" onClick={() => setMinimized(true)} title="Sembunyikan">–</button>
+            <span style={{color:"white",fontSize:"13px",fontWeight:700,flex:1}}>📢 Pengumuman Guru</span>
+            <button className="livechat-minimize-btn" onClick={() => setOpen(false)} title="Sembunyikan">–</button>
           </div>
           <div className="livechat-siswa-msgs">
-            {msgs.map(m => (
-              <div key={m.id} className={`lc-msg ${msgClass[m.tipe] || "lc-msg-info"}`}>
-                <div className="lc-msg-label">{msgLabel[m.tipe] || "📢 Pengumuman"}</div>
-                {m.tipe === "token"
-                  ? <>
-                      <div className="lc-msg-token-val">{m.pesan}</div>
-                      <div style={{fontSize:"10px",textAlign:"center",opacity:0.6,marginTop:2}}>Gunakan kode ini untuk login ujian</div>
-                    </>
-                  : <div>{m.pesan}</div>
-                }
-                <div className="lc-msg-time">{m.waktu}</div>
-              </div>
-            ))}
+            {msgs.length === 0
+              ? <div style={{textAlign:"center",padding:"20px 0",color:"#94a3b8",fontSize:"12px"}}>⏳ Menunggu pengumuman dari guru...</div>
+              : msgs.map(m => (
+                  <div key={m.id} className={`lc-msg ${msgClass[m.tipe] || "lc-msg-info"}`}>
+                    <div className="lc-msg-label">{msgLabel[m.tipe] || "📢 Pengumuman"}</div>
+                    {m.tipe === "token"
+                      ? <>
+                          <div className="lc-msg-token-val">{m.pesan}</div>
+                          <div style={{fontSize:"10px",textAlign:"center",opacity:0.6,marginTop:2}}>Gunakan kode ini untuk login ujian</div>
+                        </>
+                      : <div>{m.pesan}</div>
+                    }
+                    <div className="lc-msg-time">{m.waktu}</div>
+                  </div>
+                ))
+            }
             <div ref={msgsEndRef} />
           </div>
         </div>
       )}
-      {minimized && (
-        <div style={{position:"relative"}}>
-          <button
-            className="livechat-fab-btn"
-            onClick={() => setMinimized(false)}
-            title="Lihat pengumuman guru"
-          >💬</button>
-          {unread > 0 && (
-            <div className="livechat-fab-badge">{unread > 9 ? "9+" : unread}</div>
-          )}
-        </div>
-      )}
+      <div style={{position:"relative"}}>
+        <button
+          className="livechat-fab-btn"
+          onClick={() => setOpen(o => !o)}
+          title={open ? "Tutup pengumuman" : "Lihat pengumuman guru"}
+          style={{background: open ? "linear-gradient(135deg,#4f46e5,#7c3aed)" : "linear-gradient(135deg,#7c3aed,#4f46e5)"}}
+        >{open ? "✕" : "📢"}</button>
+        {!open && unread > 0 && (
+          <div className="livechat-fab-badge">{unread > 9 ? "9+" : unread}</div>
+        )}
+      </div>
     </div>
   );
 }
