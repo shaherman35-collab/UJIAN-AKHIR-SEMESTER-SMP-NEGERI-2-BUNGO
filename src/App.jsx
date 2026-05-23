@@ -728,58 +728,6 @@ const css = `
   .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
   .divider { height: 1px; background: var(--border); margin: 20px 0; }
   .loading { display: flex; align-items: center; justify-content: center; padding: 48px; color: var(--gray); gap: 10px; }
-
-  /* ── LIVE CHAT ── */
-  .livechat-fab { position: fixed; bottom: 24px; right: 24px; z-index: 8888; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-  .livechat-fab-btn { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #4f46e5); border: none; color: white; font-size: 22px; cursor: pointer; box-shadow: 0 6px 24px rgba(124,58,237,0.45); display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-  .livechat-fab-btn:hover { transform: scale(1.08); box-shadow: 0 8px 30px rgba(124,58,237,0.55); }
-  .livechat-fab-badge { position: absolute; top: -4px; right: -4px; background: #ef4444; color: white; font-size: 10px; font-weight: 800; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
-  .livechat-panel { width: 360px; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(15,23,42,0.2); border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; max-height: 540px; }
-  .livechat-header { background: linear-gradient(135deg, #7c3aed, #4f46e5); padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
-  .livechat-header-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 6px #4ade80; animation: livePulse 1.8s infinite; }
-  @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
-  .livechat-header h3 { color: white; font-size: 14px; font-weight: 700; flex: 1; margin: 0; }
-  .livechat-header span { color: rgba(255,255,255,0.7); font-size: 11px; }
-  .livechat-msgs { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 180px; max-height: 300px; background: #f8f9ff; }
-  .livechat-msgs::-webkit-scrollbar { width: 4px; }
-  .livechat-msgs::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 4px; }
-  .lc-msg { padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; position: relative; border: 1px solid transparent; animation: lcFadeIn 0.3s ease; }
-  @keyframes lcFadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  .lc-msg-token { background: #faf5ff; border-color: #d8b4fe; color: #6b21a8; }
-  .lc-msg-info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
-  .lc-msg-warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
-  .lc-msg-success { background: #f0fdf4; border-color: #bbf7d0; color: #14532d; }
-  .lc-msg-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.7; margin-bottom: 4px; }
-  .lc-msg-token-val { font-family: var(--mono); font-size: 22px; font-weight: 800; letter-spacing: 4px; text-align: center; padding: 8px 0 4px; }
-  .lc-msg-time { font-size: 10px; opacity: 0.55; margin-top: 5px; }
-  .lc-msg-del { position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; opacity: 0; font-size: 13px; padding: 2px 5px; border-radius: 6px; transition: opacity 0.15s; color: inherit; }
-  .lc-msg:hover .lc-msg-del { opacity: 0.6; }
-  .lc-msg-del:hover { opacity: 1 !important; background: rgba(0,0,0,0.08); }
-  .livechat-compose { padding: 12px; border-top: 1px solid var(--border); background: white; display: flex; flex-direction: column; gap: 8px; }
-  .lc-type-row { display: flex; gap: 6px; }
-  .lc-type-btn { flex: 1; padding: 6px 4px; font-size: 11px; font-weight: 700; border-radius: 8px; border: 1.5px solid var(--border); background: var(--light); color: var(--gray); cursor: pointer; transition: all 0.15s; font-family: var(--font); text-align: center; }
-  .lc-type-btn.sel-token { border-color: #a855f7; background: #faf5ff; color: #7c3aed; }
-  .lc-type-btn.sel-info { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
-  .lc-type-btn.sel-warning { border-color: #f59e0b; background: #fffbeb; color: #b45309; }
-  .lc-type-btn.sel-success { border-color: #22c55e; background: #f0fdf4; color: #15803d; }
-  .lc-input-wrap { display: flex; gap: 8px; align-items: flex-end; }
-  .lc-input { flex: 1; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; font-family: var(--font); resize: none; outline: none; transition: border 0.15s; color: var(--navy); background: var(--light); line-height: 1.4; }
-  .lc-input:focus { border-color: #7c3aed; background: white; }
-  .lc-input.token-mode { letter-spacing: 3px; font-weight: 700; font-family: var(--mono); text-transform: uppercase; }
-  .lc-send-btn { width: 38px; height: 38px; border-radius: 10px; border: none; background: linear-gradient(135deg,#7c3aed,#4f46e5); color: white; font-size: 16px; cursor: pointer; flex-shrink: 0; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
-  .lc-send-btn:hover { transform: scale(1.05); }
-  .lc-send-btn:disabled { background: var(--border); cursor: not-allowed; transform: none; }
-  .lc-empty { color: var(--gray2); font-size: 12px; text-align: center; padding: 24px 0; }
-
-  /* Live Chat panel di login siswa (pojok kanan bawah) */
-  .livechat-siswa-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 8000; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-  .livechat-siswa-panel { width: 320px; background: white; border-radius: 18px; box-shadow: 0 12px 48px rgba(15,23,42,0.18); border: 1px solid var(--border); overflow: hidden; animation: lcFadeIn 0.3s ease; }
-  .livechat-siswa-header { background: linear-gradient(135deg,#7c3aed,#4f46e5); padding: 12px 14px; display: flex; align-items: center; gap: 8px; }
-  .livechat-siswa-msgs { max-height: 240px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; background: #f8f9ff; }
-  .livechat-siswa-msgs::-webkit-scrollbar { width: 3px; }
-  .livechat-siswa-msgs::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 3px; }
-  .livechat-minimize-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; margin-left: auto; transition: background 0.15s; }
-  .livechat-minimize-btn:hover { background: rgba(255,255,255,0.35); }
 `;
 
 // ============================================================
@@ -828,301 +776,6 @@ let DEMO_UJIAN = [
 ];
 let DEMO_HASIL = [];
 let useDemo = SUPABASE_URL.includes("YOUR_PROJECT");
-
-// ============================================================
-// LIVE CHAT — Komponen utama (dipakai Admin & Siswa)
-// ============================================================
-
-// Shared in-memory store untuk mode demo (BroadcastChannel)
-// Untuk produksi: pakai tabel "live_chat" di Supabase
-
-function useLiveChatMessages() {
-  const [msgs, setMsgs] = useState([]);
-  const lastIdRef = useRef(0);
-  const loadedRef = useRef(false);
-
-  const rowToMsg = (r) => ({
-    id: r.id,
-    tipe: r.tipe || "info",
-    pesan: r.pesan,
-    waktu: new Date(r.created_at).toLocaleTimeString("id-ID", { hour:"2-digit", minute:"2-digit" }),
-  });
-
-  // Polling setiap 3 detik — sekaligus load awal
-  useEffect(() => {
-    if (useDemo) return;
-
-    const poll = async () => {
-      try {
-        let url;
-        if (!loadedRef.current) {
-          url = "live_chat?order=id.asc&limit=30";
-        } else {
-          url = `live_chat?order=id.asc&id=gt.${lastIdRef.current}`;
-        }
-        const rows = await supabase(url);
-        if (rows && rows.length > 0) {
-          lastIdRef.current = rows[rows.length - 1].id;
-          if (!loadedRef.current) {
-            setMsgs(rows.map(rowToMsg));
-          } else {
-            setMsgs(prev => [...prev, ...rows.map(rowToMsg)].slice(-30));
-          }
-        }
-        loadedRef.current = true;
-      } catch (e) {
-        console.error("[LiveChat] polling error:", e.message);
-        loadedRef.current = true;
-      }
-    };
-
-    poll();
-    const iv = setInterval(poll, 3000);
-    return () => clearInterval(iv);
-  }, []);
-
-  // BroadcastChannel untuk mode demo
-  useEffect(() => {
-    if (!useDemo) return;
-    const bc = (() => { try { return new BroadcastChannel("livechat_ch"); } catch { return null; } })();
-    if (!bc) return;
-    bc.onmessage = (e) => {
-      if (e.data.action === "add") {
-        setMsgs(prev => [...prev, e.data.msg].slice(-30));
-      } else if (e.data.action === "del") {
-        setMsgs(prev => prev.filter(m => m.id !== e.data.id));
-      } else if (e.data.action === "clear") {
-        setMsgs([]);
-      }
-    };
-    return () => bc.close();
-  }, []);
-
-  return { msgs, setMsgs };
-}
-
-// ── Panel Admin: kirim + hapus pesan ──
-function LiveChatAdmin() {
-  const { msgs, setMsgs } = useLiveChatMessages();
-  const [tipe, setTipe] = useState("token");
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [open, setOpen] = useState(true);
-  const msgsEndRef = useRef(null);
-
-  useEffect(() => { msgsEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
-
-  const tipeOpts = [
-    { val: "token",   label: "🔑 Token",      selClass: "sel-token" },
-    { val: "info",    label: "📢 Info",        selClass: "sel-info" },
-    { val: "warning", label: "⚠️ Peringatan",  selClass: "sel-warning" },
-    { val: "success", label: "✅ Sukses",      selClass: "sel-success" },
-  ];
-
-  const kirim = async () => {
-    const val = input.trim();
-    if (!val || sending) return;
-    setSending(true);
-    const now = new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
-    const newMsg = { id: Date.now(), tipe, pesan: tipe === "token" ? val.toUpperCase() : val, waktu: now };
-
-    if (useDemo) {
-      setMsgs(prev => [...prev, newMsg].slice(-30));
-      try {
-        const bc = new BroadcastChannel("livechat_ch");
-        bc.postMessage({ action: "add", msg: newMsg });
-        bc.close();
-      } catch {}
-    } else {
-      try {
-        await supabase("live_chat", { method:"POST", body: JSON.stringify({ tipe, pesan: newMsg.pesan }) });
-        setMsgs(prev => [...prev, newMsg].slice(-30));
-      } catch(e) { alert("Gagal kirim: " + e.message); }
-    }
-    setInput("");
-    setSending(false);
-  };
-
-  const hapus = async (id) => {
-    if (useDemo) {
-      setMsgs(prev => prev.filter(m => m.id !== id));
-      try {
-        const bc = new BroadcastChannel("livechat_ch");
-        bc.postMessage({ action: "del", id });
-        bc.close();
-      } catch {}
-    } else {
-      try {
-        await supabase(`live_chat?id=eq.${id}`, { method: "DELETE" });
-        setMsgs(prev => prev.filter(m => m.id !== id));
-      } catch(e) { alert("Gagal hapus: " + e.message); }
-    }
-  };
-
-  const hapusSemua = async () => {
-    if (!window.confirm("Hapus semua pesan Live Chat?")) return;
-    if (useDemo) {
-      setMsgs([]);
-      try {
-        const bc = new BroadcastChannel("livechat_ch");
-        bc.postMessage({ action: "clear" });
-        bc.close();
-      } catch {}
-    } else {
-      try {
-        await supabase("live_chat?id=gt.0", { method: "DELETE" });
-        setMsgs([]);
-      } catch(e) { alert("Gagal hapus semua: " + e.message); }
-    }
-  };
-
-  const msgClass = { token:"lc-msg-token", info:"lc-msg-info", warning:"lc-msg-warning", success:"lc-msg-success" };
-  const msgLabel = { token:"🔑 Token Ujian", info:"📢 Pengumuman", warning:"⚠️ Peringatan", success:"✅ Informasi" };
-
-  return (
-    <div className="livechat-fab">
-      {open && (
-        <div className="livechat-panel">
-          <div className="livechat-header">
-            <div className="livechat-header-dot" />
-            <h3>Live Chat Kelas</h3>
-            <span>{msgs.length} pesan</span>
-            {msgs.length > 0 && (
-              <button onClick={hapusSemua} style={{background:"rgba(255,255,255,0.15)",border:"none",color:"rgba(255,255,255,0.8)",fontSize:"10px",padding:"3px 8px",borderRadius:"6px",cursor:"pointer",marginLeft:4,fontFamily:"var(--font)"}}>
-                Hapus Semua
-              </button>
-            )}
-            <button onClick={() => setOpen(false)} style={{background:"rgba(255,255,255,0.2)",border:"none",color:"white",width:"26px",height:"26px",borderRadius:"50%",cursor:"pointer",marginLeft:4,fontSize:"14px",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-          </div>
-
-          <div className="livechat-msgs">
-            {msgs.length === 0
-              ? <div className="lc-empty">📭 Belum ada pesan.<br/>Kirim token atau pengumuman di bawah.</div>
-              : msgs.map(m => (
-                  <div key={m.id} className={`lc-msg ${msgClass[m.tipe] || "lc-msg-info"}`}>
-                    <div className="lc-msg-label">{msgLabel[m.tipe] || "📢 Pengumuman"}</div>
-                    {m.tipe === "token"
-                      ? <div className="lc-msg-token-val">{m.pesan}</div>
-                      : <div>{m.pesan}</div>
-                    }
-                    <div className="lc-msg-time">{m.waktu}</div>
-                    <button className="lc-msg-del" onClick={() => hapus(m.id)} title="Hapus pesan">🗑️</button>
-                  </div>
-                ))
-            }
-            <div ref={msgsEndRef} />
-          </div>
-
-          <div className="livechat-compose">
-            <div className="lc-type-row">
-              {tipeOpts.map(t => (
-                <button key={t.val}
-                  className={`lc-type-btn ${tipe===t.val ? t.selClass : ""}`}
-                  onClick={() => setTipe(t.val)}
-                >{t.label}</button>
-              ))}
-            </div>
-            <div className="lc-input-wrap">
-              <input
-                className={`lc-input${tipe==="token" ? " token-mode" : ""}`}
-                placeholder={tipe==="token" ? "Ketik token ujian..." : "Tulis pesan untuk siswa..."}
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key==="Enter" && !e.shiftKey) { e.preventDefault(); kirim(); }}}
-                maxLength={tipe==="token" ? 20 : 200}
-              />
-              <button className="lc-send-btn" onClick={kirim} disabled={!input.trim() || sending} title="Kirim pesan">
-                {sending ? "⏳" : "📤"}
-              </button>
-            </div>
-            <p style={{fontSize:"10px",color:"var(--gray2)",textAlign:"center",margin:0}}>
-              Pesan muncul otomatis di layar semua siswa
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div style={{position:"relative"}}>
-        <button className="livechat-fab-btn" onClick={() => setOpen(o => !o)} title="Live Chat">
-          {open ? "✕" : "💬"}
-        </button>
-        {!open && msgs.length > 0 && (
-          <div className="livechat-fab-badge">{msgs.length > 9 ? "9+" : msgs.length}</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Panel Siswa: hanya baca, muncul di pojok kanan bawah ──
-function LiveChatSiswa() {
-  const { msgs } = useLiveChatMessages();
-  const [open, setOpen] = useState(false);
-  const [lastSeen, setLastSeen] = useState(0);
-  const msgsEndRef = useRef(null);
-  const unread = msgs.length - lastSeen;
-
-  // Auto-buka panel kalau ada pesan baru masuk
-  useEffect(() => {
-    if (msgs.length > lastSeen) {
-      setOpen(true);
-    }
-  }, [msgs.length]); // eslint-disable-line
-
-  useEffect(() => {
-    if (open) {
-      setLastSeen(msgs.length);
-      setTimeout(() => msgsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    }
-  }, [msgs, open]);
-
-  const msgClass = { token:"lc-msg-token", info:"lc-msg-info", warning:"lc-msg-warning", success:"lc-msg-success" };
-  const msgLabel = { token:"🔑 Token Ujian", info:"📢 Pengumuman", warning:"⚠️ Peringatan", success:"✅ Informasi" };
-
-  return (
-    <div className="livechat-siswa-wrap">
-      {open && (
-        <div className="livechat-siswa-panel">
-          <div className="livechat-siswa-header">
-            <div className="livechat-header-dot" />
-            <span style={{color:"white",fontSize:"13px",fontWeight:700,flex:1}}>📢 Pengumuman Guru</span>
-            <button className="livechat-minimize-btn" onClick={() => setOpen(false)} title="Sembunyikan">–</button>
-          </div>
-          <div className="livechat-siswa-msgs">
-            {msgs.length === 0
-              ? <div style={{textAlign:"center",padding:"20px 0",color:"#94a3b8",fontSize:"12px"}}>⏳ Menunggu pengumuman dari guru...</div>
-              : msgs.map(m => (
-                  <div key={m.id} className={`lc-msg ${msgClass[m.tipe] || "lc-msg-info"}`}>
-                    <div className="lc-msg-label">{msgLabel[m.tipe] || "📢 Pengumuman"}</div>
-                    {m.tipe === "token"
-                      ? <>
-                          <div className="lc-msg-token-val">{m.pesan}</div>
-                          <div style={{fontSize:"10px",textAlign:"center",opacity:0.6,marginTop:2}}>Gunakan kode ini untuk login ujian</div>
-                        </>
-                      : <div>{m.pesan}</div>
-                    }
-                    <div className="lc-msg-time">{m.waktu}</div>
-                  </div>
-                ))
-            }
-            <div ref={msgsEndRef} />
-          </div>
-        </div>
-      )}
-      <div style={{position:"relative"}}>
-        <button
-          className="livechat-fab-btn"
-          onClick={() => setOpen(o => !o)}
-          title={open ? "Tutup pengumuman" : "Lihat pengumuman guru"}
-          style={{background: open ? "linear-gradient(135deg,#4f46e5,#7c3aed)" : "linear-gradient(135deg,#7c3aed,#4f46e5)"}}
-        >{open ? "✕" : "📢"}</button>
-        {!open && unread > 0 && (
-          <div className="livechat-fab-badge">{unread > 9 ? "9+" : unread}</div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // ============================================================
 // MAIN APP
@@ -1366,49 +1019,97 @@ function NotifToast({ notifs, hapus }) {
   );
 }
 
-// ── Banner notif di halaman login (latar PUTIH) ──
-// Perbaikan: warna teks gelap agar terbaca di latar putih
+// ── Live Chat Widget Pengumuman — pojok kanan bawah profesional ──
 function NotifBanner({ notifs, hapus }) {
-  if (!notifs.length) return null;
-  const latest = notifs[0];
+  const [open, setOpen] = React.useState(false);
+  const [newCount, setNewCount] = React.useState(0);
+  const [prevLen, setPrevLen] = React.useState(notifs.length);
+  const bodyRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (notifs.length > prevLen) {
+      setNewCount(c => c + (notifs.length - prevLen));
+      if (open && bodyRef.current) setTimeout(() => { if(bodyRef.current) bodyRef.current.scrollTop = 0; }, 80);
+    }
+    setPrevLen(notifs.length);
+  }, [notifs.length]); // eslint-disable-line
 
   const tipeConfig = {
-    info:    { bg: "#eff6ff", border: "#3b82f6", labelColor: "#1d4ed8", textColor: "#1e3a5f", icon: "📢" },
-    warning: { bg: "#fffbeb", border: "#f59e0b", labelColor: "#b45309", textColor: "#78350f", icon: "⚠️" },
-    success: { bg: "#f0fdf4", border: "#22c55e", labelColor: "#15803d", textColor: "#14532d", icon: "✅" },
-    token:   { bg: "#faf5ff", border: "#a855f7", labelColor: "#7e22ce", textColor: "#4a1d96", icon: "🔑" },
+    info:    { bg: "#eff6ff", border: "#93c5fd", accent: "#1d4ed8", label: "Pengumuman", icon: "📢", dot: "#3b82f6" },
+    warning: { bg: "#fffbeb", border: "#fcd34d", accent: "#b45309", label: "Peringatan", icon: "⚠️", dot: "#f59e0b" },
+    success: { bg: "#f0fdf4", border: "#86efac", accent: "#15803d", label: "Info Penting", icon: "✅", dot: "#22c55e" },
+    token:   { bg: "#faf5ff", border: "#d8b4fe", accent: "#7e22ce", label: "Token Ujian", icon: "🔑", dot: "#a855f7" },
   };
 
-  const s = tipeConfig[latest.tipe] || tipeConfig.info;
-
   return (
-    <div style={{
-      background: s.bg,
-      border: `1.5px solid ${s.border}`,
-      borderRadius: 12,
-      padding: "12px 16px",
-      marginTop: 16,
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      animation: "_fadeIn 0.3s ease",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-    }}>
-      <span style={{ fontSize: 22, flexShrink: 0 }}>{s.icon}</span>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: s.labelColor, letterSpacing: 1, textTransform: "uppercase", marginBottom: 2 }}>
-          Pengumuman Admin
-        </div>
-        <div style={{ fontSize: 13, color: s.textColor, fontWeight: 600 }}>
-          {latest.pesan}
-        </div>
+    <>
+      <style>{`
+        @keyframes _chatSlideIn { from{opacity:0;transform:translateY(14px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes _msgIn { from{opacity:0;transform:translateX(8px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes _badgePop { 0%{transform:scale(1)} 45%{transform:scale(1.45)} 100%{transform:scale(1)} }
+        .nc-fab:hover { transform:scale(1.08) !important; box-shadow:0 8px 30px rgba(30,58,138,0.42) !important; }
+        .nc-fab:active { transform:scale(0.95) !important; }
+        .nc-msg:hover .nc-x { opacity:1 !important; }
+        .nc-x { opacity:0; transition:opacity 0.15s; }
+      `}</style>
+      <div style={{ position:"fixed", bottom:24, right:24, zIndex:9990, display:"flex", flexDirection:"column", alignItems:"flex-end", gap:10, pointerEvents:"none" }}>
+        {open && (
+          <div style={{
+            pointerEvents:"all", width:340, background:"#fff", borderRadius:20,
+            boxShadow:"0 12px 52px rgba(15,23,42,0.22), 0 2px 8px rgba(15,23,42,0.07)",
+            border:"1px solid #e2e8f0", display:"flex", flexDirection:"column",
+            overflow:"hidden", animation:"_chatSlideIn 0.26s cubic-bezier(.34,1.4,.64,1)", maxHeight:460,
+          }}>
+            <div style={{ background:"linear-gradient(135deg,#1e40af 0%,#1e3a8a 100%)", padding:"13px 16px", display:"flex", alignItems:"center", gap:10, flexShrink:0 }}>
+              <div style={{ width:38, height:38, borderRadius:"50%", background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0, border:"2px solid rgba(255,255,255,0.28)" }}>📡</div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ color:"#fff", fontWeight:800, fontSize:14, lineHeight:1.2 }}>Pengumuman Admin</div>
+                <div style={{ color:"rgba(255,255,255,0.6)", fontSize:11, marginTop:2, display:"flex", alignItems:"center", gap:5 }}>
+                  <span style={{ width:6, height:6, borderRadius:"50%", background:"#4ade80", display:"inline-block" }}/>
+                  {notifs.length > 0 ? `${notifs.length} pesan` : "Belum ada pesan"}
+                </div>
+              </div>
+              <button onClick={() => setOpen(false)} style={{ background:"rgba(255,255,255,0.15)", border:"none", color:"#fff", cursor:"pointer", width:30, height:30, borderRadius:"50%", fontSize:15, display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.15s" }} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.28)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.15)"}>✕</button>
+            </div>
+            <div ref={bodyRef} style={{ flex:1, overflowY:"auto", padding:"10px 12px", display:"flex", flexDirection:"column", gap:8, minHeight:80, scrollbarWidth:"thin", scrollbarColor:"#cbd5e1 transparent" }}>
+              {notifs.length === 0 ? (
+                <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"28px 0", color:"#94a3b8" }}>
+                  <div style={{ fontSize:32, marginBottom:8 }}>📭</div>
+                  <div style={{ fontSize:13, fontWeight:600 }}>Belum ada pengumuman</div>
+                  <div style={{ fontSize:11, marginTop:4, color:"#cbd5e1" }}>Update otomatis tiap 4 detik</div>
+                </div>
+              ) : (
+                notifs.map((n, idx) => {
+                  const s = tipeConfig[n.tipe] || tipeConfig.info;
+                  return (
+                    <div key={n.id} className="nc-msg" style={{ background:s.bg, border:`1.5px solid ${s.border}`, borderRadius:12, padding:"10px 12px", display:"flex", gap:9, alignItems:"flex-start", animation:`_msgIn 0.2s ease ${Math.min(idx,3)*0.04}s both` }}>
+                      <div style={{ width:28, height:28, borderRadius:"50%", background:`${s.dot}18`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0, marginTop:1, border:`1px solid ${s.border}` }}>{s.icon}</div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:9, fontWeight:800, color:s.accent, letterSpacing:1.2, textTransform:"uppercase", marginBottom:3 }}>{s.label}</div>
+                        <div style={{ fontSize:12.5, color:"#1e293b", fontWeight:600, lineHeight:1.5, wordBreak:"break-word" }}>{n.pesan}</div>
+                        {n.waktu && <div style={{ fontSize:10, color:"#94a3b8", marginTop:5, display:"flex", alignItems:"center", gap:4 }}><span>🕐</span>{new Date(n.waktu).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>}
+                      </div>
+                      <button className="nc-x" onClick={() => hapus(n.id)} style={{ background:"none", border:"none", color:"#94a3b8", cursor:"pointer", fontSize:14, padding:0, lineHeight:1, flexShrink:0, marginTop:2 }}>✕</button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <div style={{ borderTop:"1px solid #f1f5f9", padding:"8px 14px", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+              <div style={{ fontSize:10, color:"#94a3b8", display:"flex", alignItems:"center", gap:4 }}>
+                <span style={{ width:5, height:5, borderRadius:"50%", background:"#4ade80", display:"inline-block" }}/>
+                Live · update tiap 4 detik
+              </div>
+              {notifs.length > 0 && <button onClick={() => notifs.forEach(n => hapus(n.id))} style={{ fontSize:10, color:"#94a3b8", background:"none", border:"none", cursor:"pointer", fontWeight:700, padding:0 }} onMouseEnter={e=>e.currentTarget.style.color="#ef4444"} onMouseLeave={e=>e.currentTarget.style.color="#94a3b8"}>Hapus semua</button>}
+            </div>
+          </div>
+        )}
+        <button className="nc-fab" onClick={() => { setOpen(v => !v); if(!open) setNewCount(0); }} style={{ pointerEvents:"all", width:54, height:54, borderRadius:"50%", background:"linear-gradient(135deg,#1e40af,#1e3a8a)", border:"none", cursor:"pointer", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 4px 20px rgba(30,58,138,0.42)", position:"relative", flexShrink:0, transition:"all 0.22s cubic-bezier(.34,1.4,.64,1)", fontSize:22 }} title={open ? "Tutup pengumuman" : "Pengumuman Admin"}>
+          {open ? "✕" : "📡"}
+          {!open && newCount > 0 && <span style={{ position:"absolute", top:-3, right:-3, background:"#ef4444", color:"#fff", borderRadius:"50%", width:20, height:20, fontSize:10, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", border:"2.5px solid #fff", animation:"_badgePop 0.35s ease" }}>{newCount > 9 ? "9+" : newCount}</span>}
+        </button>
       </div>
-      <button
-        onClick={() => hapus(latest.id)}
-        style={{ background: "none", border: "none", color: s.labelColor, cursor: "pointer", fontSize: 18, opacity: 0.6, flexShrink: 0 }}
-        aria-label="Tutup pengumuman"
-      >✕</button>
-    </div>
+    </>
   );
 }
 
@@ -1767,8 +1468,6 @@ function LoginScreen({ onGuruLogin, onStudentJoin }) {
           </div>
         </div>
       )}
-      {/* ── Live Chat Siswa: panel baca-saja di pojok kanan bawah ── */}
-      <LiveChatSiswa />
     </>
   );
 }
@@ -1825,7 +1524,8 @@ function GuruDashboard({ guru, onLogout }) {
 
   return (
     <div className="dashboard">
-      <div className="sidebar">        <div className="sidebar-logo">
+      <div className="sidebar">
+        <div className="sidebar-logo">
           <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"8px"}}>
             <img src={CONFIG.logoUrl} alt={"Logo " + CONFIG.namaSekolahSingkat} style={{width:"40px",height:"40px",borderRadius:"50%",objectFit:"cover"}} />
             <div>
@@ -1860,8 +1560,6 @@ function GuruDashboard({ guru, onLogout }) {
           </>
         )}
       </div>
-      {/* ── Live Chat FAB — Admin bisa kirim & hapus pesan ── */}
-      <LiveChatAdmin />
     </div>
   );
 }
@@ -3451,7 +3149,7 @@ function MonitorPage({ ujianList }) {
   const bukaKunci = (nama, kelas) => {
     const key = `${nama}_${kelas}`;
     saveUnlocked([...unlockedSiswa.filter(k => k !== key), key]);
-    alert(`✅ Kunci ujian ${nama} (${kelas}) berhasil dibuka!\nMinta siswa refresh browser dan masuk ulang.`);
+    alert(`✅ Kunci ujian ${nama} (${kelas}) berhasil dicatat!\nMinta pengawas masukkan kode 2026 di layar kunci siswa.`);
   };
 
   // Hitung status koneksi peserta berdasarkan last_heartbeat
@@ -3706,7 +3404,7 @@ function MonitorPage({ ujianList }) {
       <div className="card">
         <div className="card-header"><h2>🔓 Buka Kunci Siswa</h2></div>
         <div style={{background:"var(--blue3)", borderRadius:"var(--radius2)", padding:"12px 16px", marginBottom:"16px", fontSize:"13px", color:"var(--navy3)"}}>
-          ℹ️ Jika ada siswa yang ujiannya terkunci (3x pelanggaran), isi nama dan kelas di bawah lalu klik Buka Kunci. Minta siswa refresh browser dan masuk ulang.
+          ℹ️ Jika ada siswa yang ujiannya terkunci (3x pelanggaran), minta pengawas mendatangi siswa dan memasukkan kode <strong>2026</strong> di layar kunci yang muncul di browser siswa. Siswa tidak perlu refresh!
         </div>
         <BukaKunciManual onBukaKunci={bukaKunci} />
         {unlockedSiswa.length > 0 && (
@@ -3759,7 +3457,7 @@ function BukaKunciManual({ onBukaKunci }) {
       </div>
       {success && (
         <div style={{marginTop:"12px", padding:"10px 14px", background:"var(--green3)", borderRadius:"var(--radius2)", fontSize:"13px", color:"var(--green2)", fontWeight:"600"}}>
-          ✅ Kunci berhasil dibuka! Minta siswa refresh browser dan masuk ulang.
+          ✅ Tercatat! Minta pengawas masukkan kode <strong>2026</strong> di layar kunci siswa tersebut.
         </div>
       )}
     </div>
@@ -3880,6 +3578,8 @@ function StudentExam({ data, onFinish }) {
   const [showWarning, setShowWarning] = useState(false);
   const [warningMsg, setWarningMsg] = useState("");
   const [locked, setLocked] = useState(false);
+  const [unlockInput, setUnlockInput] = useState("");
+  const [unlockError, setUnlockError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState("");
   const [queuePos, setQueuePos] = useState(null);
@@ -4348,7 +4048,7 @@ function StudentExam({ data, onFinish }) {
         {/* Warning overlay tetap aktif */}
         {showWarning && (
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
-            <div style={{background:"white",borderRadius:"16px",padding:"32px",maxWidth:"420px",textAlign:"center"}}>
+            <div style={{background:"white",borderRadius:"16px",padding:"32px",maxWidth:"420px",textAlign:"center",width:"100%"}}>
               <div style={{fontSize:"48px",marginBottom:"12px"}}>{locked ? "🔒" : "⚠️"}</div>
               <h2 style={{fontSize:"18px",fontWeight:"800",marginBottom:"12px",color:locked?"var(--red2)":"var(--yellow)"}}>{locked ? "Ujian Dikunci" : "Peringatan"}</h2>
               <p style={{fontSize:"14px",color:"var(--gray)",marginBottom:"20px",lineHeight:"1.6"}}>{warningMsg}</p>
@@ -4357,7 +4057,38 @@ function StudentExam({ data, onFinish }) {
                   🔄 Kembali ke Ujian
                 </button>
               )}
-              {locked && <p style={{fontSize:"12px",color:"var(--red2)",fontWeight:"600"}}>Panggil pengawas untuk membuka kunci.</p>}
+              {locked && (
+                <div>
+                  <div style={{background:"var(--red3)",borderRadius:"var(--radius2)",padding:"10px 14px",marginBottom:"16px",fontSize:"13px",color:"var(--red2)",fontWeight:"600"}}>
+                    🔒 Hubungi pengawas/admin untuk memasukkan kode kunci.
+                  </div>
+                  <input
+                    type="password"
+                    value={unlockInput}
+                    onChange={e => { setUnlockInput(e.target.value); setUnlockError(""); }}
+                    placeholder="Masukkan kode kunci pengawas"
+                    style={{width:"100%",padding:"12px 16px",border:`1.5px solid ${unlockError?"var(--red)":"var(--border)"}`,borderRadius:"var(--radius2)",fontSize:"15px",marginBottom:"8px",textAlign:"center",letterSpacing:"4px",outline:"none"}}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") {
+                        if (unlockInput === "2026") {
+                          setLocked(false); setShowWarning(false); setUnlockInput(""); setUnlockError(""); enterFullscreen();
+                        } else { setUnlockError("Kode salah. Hubungi pengawas."); setUnlockInput(""); }
+                      }
+                    }}
+                    autoComplete="off"
+                  />
+                  {unlockError && <div style={{fontSize:"12px",color:"var(--red2)",fontWeight:"600",marginBottom:"10px"}}>❌ {unlockError}</div>}
+                  <button
+                    className="btn btn-green"
+                    style={{width:"100%",padding:"12px",fontSize:"15px",fontWeight:"700"}}
+                    onClick={() => {
+                      if (unlockInput === "2026") {
+                        setLocked(false); setShowWarning(false); setUnlockInput(""); setUnlockError(""); enterFullscreen();
+                      } else { setUnlockError("Kode salah. Hubungi pengawas."); setUnlockInput(""); }
+                    }}
+                  >🔓 Buka Kunci</button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -4431,8 +4162,6 @@ function StudentExam({ data, onFinish }) {
           </div>
         </div>
       </div>
-      {/* ── Live Chat Siswa (Google Form mode) ── */}
-      <LiveChatSiswa />
     );
   }
 
@@ -4441,7 +4170,7 @@ function StudentExam({ data, onFinish }) {
       {/* Warning overlay */}
       {showWarning && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
-          <div style={{background:"white",borderRadius:"16px",padding:"32px",maxWidth:"420px",textAlign:"center"}}>
+          <div style={{background:"white",borderRadius:"16px",padding:"32px",maxWidth:"420px",textAlign:"center",width:"100%"}}>
             <div style={{fontSize:"48px",marginBottom:"12px"}}>{locked ? "🔒" : "⚠️"}</div>
             <h2 style={{fontSize:"18px",fontWeight:"800",marginBottom:"12px",color:locked?"var(--red2)":"var(--yellow)"}}>
               {locked ? "Ujian Dikunci" : "Peringatan"}
@@ -4452,7 +4181,38 @@ function StudentExam({ data, onFinish }) {
                 🔄 Kembali ke Ujian
               </button>
             )}
-            {locked && <p style={{fontSize:"12px",color:"var(--red2)",fontWeight:"600"}}>Panggil pengawas untuk membuka kunci.</p>}
+            {locked && (
+              <div>
+                <div style={{background:"var(--red3)",borderRadius:"var(--radius2)",padding:"10px 14px",marginBottom:"16px",fontSize:"13px",color:"var(--red2)",fontWeight:"600"}}>
+                  🔒 Hubungi pengawas/admin untuk memasukkan kode kunci.
+                </div>
+                <input
+                  type="password"
+                  value={unlockInput}
+                  onChange={e => { setUnlockInput(e.target.value); setUnlockError(""); }}
+                  placeholder="Masukkan kode kunci pengawas"
+                  style={{width:"100%",padding:"12px 16px",border:`1.5px solid ${unlockError?"var(--red)":"var(--border)"}`,borderRadius:"var(--radius2)",fontSize:"15px",marginBottom:"8px",textAlign:"center",letterSpacing:"4px",outline:"none"}}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") {
+                      if (unlockInput === "2026") {
+                        setLocked(false); setShowWarning(false); setUnlockInput(""); setUnlockError(""); enterFullscreen();
+                      } else { setUnlockError("Kode salah. Hubungi pengawas."); setUnlockInput(""); }
+                    }
+                  }}
+                  autoComplete="off"
+                />
+                {unlockError && <div style={{fontSize:"12px",color:"var(--red2)",fontWeight:"600",marginBottom:"10px"}}>❌ {unlockError}</div>}
+                <button
+                  className="btn btn-green"
+                  style={{width:"100%",padding:"12px",fontSize:"15px",fontWeight:"700"}}
+                  onClick={() => {
+                    if (unlockInput === "2026") {
+                      setLocked(false); setShowWarning(false); setUnlockInput(""); setUnlockError(""); enterFullscreen();
+                    } else { setUnlockError("Kode salah. Hubungi pengawas."); setUnlockInput(""); }
+                  }}
+                >🔓 Buka Kunci</button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -4543,8 +4303,6 @@ function StudentExam({ data, onFinish }) {
           </div>
         </div>
       )}
-      {/* ── Live Chat Siswa — baca pengumuman dari guru saat ujian ── */}
-      <LiveChatSiswa />
     </div>
   );
 }
