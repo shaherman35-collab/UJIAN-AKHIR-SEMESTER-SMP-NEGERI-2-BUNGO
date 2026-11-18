@@ -585,11 +585,13 @@ function shuffleArray(arr) {
   return a;
 }
 
-// Acak soal DAN opsi jawaban, kembalikan soal dengan mapping jawaban benar
-function shuffleSoalDanOpsi(soalAsli) {
+// Susun soal untuk siswa. Secara bawaan soal & pilihan TIDAK diacak (urutan sesuai guru).
+//  - acakSoal : acak urutan nomor soal
+//  - acakOpsi : acak urutan pilihan A–D (soal Benar/Salah 2 pilihan tidak pernah diacak)
+function shuffleSoalDanOpsi(soalAsli, acakSoal = false, acakOpsi = false) {
   if (!soalAsli || soalAsli.length === 0) return [];
-  const soalAcak = shuffleArray(soalAsli);
-  return soalAcak.map(s => {
+  const daftar = acakSoal ? shuffleArray(soalAsli) : [...soalAsli];
+  return daftar.map(s => {
     // Pastikan opsi adalah array yang valid
     let opsi = s.opsi;
     if (!Array.isArray(opsi)) {
@@ -598,10 +600,9 @@ function shuffleSoalDanOpsi(soalAsli) {
     if (!opsi || opsi.length === 0) opsi = ["A","B","C","D"];
 
     const jawabanIdx = typeof s.jawaban === 'number' && s.jawaban < opsi.length ? s.jawaban : 0;
-    // Soal Benar/Salah (2 pilihan) dibiarkan berurutan; soal lain diacak lewat indeks
-    const urutan = opsi.length <= 2
-      ? opsi.map((_, i) => i)
-      : shuffleArray(opsi.map((_, i) => i));
+    const urutan = (acakOpsi && opsi.length > 2)
+      ? shuffleArray(opsi.map((_, i) => i))
+      : opsi.map((_, i) => i);
     return { ...s, opsi: urutan.map(i => opsi[i]), jawaban: urutan.indexOf(jawabanIdx) };
   });
 }
@@ -615,6 +616,60 @@ const MAPEL = [
   "Matematika","Bahasa Indonesia","Bahasa Inggris","IPA","IPS",
   "PKn","Agama","Informatika","PJOK","Prakarya",
 ];
+
+// ============================================================
+// KKM PER MAPEL — diatur admin di menu "Pengaturan"
+// Disimpan di tabel Supabase "kkm" (mapel, nilai). Jika tabel belum dibuat,
+// KKM disimpan di perangkat ini saja (cadangan) dan admin diberi tahu.
+// ============================================================
+const KKM_DEFAULT = 75;
+const KKM_CACHE_KEY = "cbt_kkm_map_v1";
+const kkmStore = { map: {}, sumber: "default" };   // sumber: db | lokal | default
+
+function getKKM(mapel) {
+  const v = Number(kkmStore.map[mapel]);
+  return isFinite(v) && v > 0 ? v : KKM_DEFAULT;
+}
+const lulusKkm = (h) => (Number(h.nilai) || 0) >= getKKM(h.mapel);
+
+async function muatKkm() {
+  let lokal = {};
+  try { lokal = JSON.parse(localStorage.getItem(KKM_CACHE_KEY) || "{}") || {}; } catch {}
+  if (useDemo) { kkmStore.map = lokal; kkmStore.sumber = "lokal"; return; }
+  try {
+    const rows = await supabase("kkm?select=mapel,nilai");
+    const m = {};
+    rows.forEach(r => { m[r.mapel] = Number(r.nilai); });
+    kkmStore.map = m; kkmStore.sumber = "db";
+    try { localStorage.setItem(KKM_CACHE_KEY, JSON.stringify(m)); } catch {}
+  } catch {
+    kkmStore.map = lokal; kkmStore.sumber = "lokal";
+  }
+}
+
+// Mengembalikan { sumber: "db" | "lokal", error? }
+async function simpanKkm(map) {
+  const bersih = {};
+  MAPEL.forEach(m => {
+    const v = Math.round(Number(map[m]));
+    bersih[m] = v >= 1 && v <= 100 ? v : KKM_DEFAULT;
+  });
+  try { localStorage.setItem(KKM_CACHE_KEY, JSON.stringify(bersih)); } catch {}
+  kkmStore.map = bersih;
+  if (useDemo) { kkmStore.sumber = "lokal"; return { sumber: "lokal" }; }
+  try {
+    await supabase("kkm?on_conflict=mapel", {
+      method: "POST",
+      body: JSON.stringify(MAPEL.map(m => ({ mapel: m, nilai: bersih[m] }))),
+      prefer: "resolution=merge-duplicates,return=minimal",
+    });
+    kkmStore.sumber = "db";
+    return { sumber: "db" };
+  } catch (e) {
+    kkmStore.sumber = "lokal";
+    return { sumber: "lokal", error: e.message };
+  }
+}
 
 // Akun login untuk guru / admin.
 // PENTING: ganti username & password di bawah sebelum dipakai sungguhan!
@@ -1610,9 +1665,13 @@ function GuruDashboard({ guru, onLogout }) {
   const [ujianList, setUjianList] = useState([]);
   const [hasilList, setHasilList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [, setKkmVer] = useState(0);          // memicu render ulang setelah KKM berubah
+  const isAdmin = guru && guru.username === "admin";
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    await muatKkm();                          // KKM per mapel (tidak pernah melempar error)
+    setKkmVer(v => v + 1);
     try {
       if (useDemo) {
         setUjianList([...DEMO_UJIAN]);
@@ -1650,6 +1709,7 @@ function GuruDashboard({ guru, onLogout }) {
     { id: "monitor",      icon: "🖥️", label: "Monitor Ujian" },
     { id: "hasil",        icon: "📈", label: "Hasil Ujian" },
     { id: "pengumuman",   icon: "📡", label: "Pengumuman" },
+    ...(isAdmin ? [{ id: "pengaturan", icon: "⚙️", label: "Pengaturan" }] : []),
   ];
 
   return (
@@ -1687,6 +1747,7 @@ function GuruDashboard({ guru, onLogout }) {
             {page === "monitor"    && <MonitorPage ujianList={ujianList} />}
             {page === "hasil"      && <HasilPage hasilList={hasilList} ujianList={ujianList} />}
             {page === "pengumuman" && <NotifikasiPage />}
+            {page === "pengaturan" && isAdmin && <PengaturanPage onSaved={() => setKkmVer(v => v + 1)} />}
           </>
         )}
       </div>
@@ -1694,11 +1755,112 @@ function GuruDashboard({ guru, onLogout }) {
   );
 }
 
+// ---- Pengaturan (khusus admin): KKM per mata pelajaran ----
+const SQL_TABEL_KKM = `create table if not exists kkm (
+  mapel text primary key,
+  nilai integer not null default 75
+);
+alter table kkm enable row level security;
+create policy "anon select kkm" on kkm for select to anon using (true);
+create policy "anon insert kkm" on kkm for insert to anon with check (true);
+create policy "anon update kkm" on kkm for update to anon using (true);`;
+
+function PengaturanPage({ onSaved }) {
+  const awal = () => Object.fromEntries(MAPEL.map(m => [m, String(getKKM(m))]));
+  const [nilai, setNilai] = useState(awal);
+  const [semua, setSemua] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [info, setInfo] = useState(null);   // { tipe: "ok" | "lokal", pesan }
+  const [salin, setSalin] = useState(false);
+
+  const valid = MAPEL.every(m => { const v = Number(nilai[m]); return Number.isInteger(v) && v >= 1 && v <= 100; });
+
+  const terapkanSemua = () => {
+    const v = Number(semua);
+    if (!Number.isInteger(v) || v < 1 || v > 100) return alert("Isi angka 1–100.");
+    setNilai(Object.fromEntries(MAPEL.map(m => [m, String(v)])));
+  };
+
+  const simpan = async () => {
+    if (!valid) return alert("Setiap KKM harus berupa angka bulat 1–100.");
+    setSaving(true);
+    const hasil = await simpanKkm(nilai);
+    setSaving(false);
+    onSaved && onSaved();
+    if (hasil.sumber === "db") setInfo({ tipe: "ok", pesan: "✅ KKM tersimpan di database dan berlaku untuk semua guru." });
+    else setInfo({ tipe: "lokal", pesan: "⚠️ KKM baru tersimpan di perangkat ini karena tabel \"kkm\" belum ada di database." + (hasil.error ? ` (${hasil.error})` : "") });
+  };
+
+  const salinSql = async () => {
+    try { await navigator.clipboard.writeText(SQL_TABEL_KKM); setSalin(true); setTimeout(() => setSalin(false), 2000); } catch { alert(SQL_TABEL_KKM); }
+  };
+
+  return (
+    <>
+      <div className="page-header"><h1>Pengaturan</h1><p>Pengaturan khusus administrator</p></div>
+
+      <div className="card">
+        <div className="card-header"><h2>🎯 KKM per Mata Pelajaran</h2></div>
+        <p style={{fontSize:"13px", color:"var(--gray)", lineHeight:"1.6", marginBottom:"16px"}}>
+          KKM dipakai guru pada <strong>rekap nilai</strong> untuk menentukan status Lulus/Remedi. Siswa tidak melihat KKM maupun nilai.
+          Perubahan berlaku untuk seluruh hasil ujian, termasuk yang sudah masuk.
+        </p>
+
+        <div style={{display:"flex", gap:"8px", flexWrap:"wrap", alignItems:"center", background:"var(--light)", borderRadius:"var(--radius2)", padding:"10px 14px", marginBottom:"16px"}}>
+          <span style={{fontSize:"13px", fontWeight:"600"}}>Samakan semua mapel:</span>
+          <input type="number" min="1" max="100" value={semua} onChange={e => setSemua(e.target.value)} placeholder="mis. 75"
+            style={{width:"90px", padding:"7px 10px", borderRadius:"var(--radius2)", border:"1.5px solid var(--border)", fontSize:"14px"}} />
+          <button type="button" className="btn btn-ghost" style={{padding:"7px 14px", fontSize:"13px"}} onClick={terapkanSemua}>Terapkan</button>
+        </div>
+
+        <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))", gap:"12px", marginBottom:"18px"}}>
+          {MAPEL.map(m => {
+            const v = Number(nilai[m]);
+            const salah = !(Number.isInteger(v) && v >= 1 && v <= 100);
+            return (
+              <label key={m} style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:"10px", background:"#fff", border:`1.5px solid ${salah ? "var(--red)" : "var(--border)"}`, borderRadius:"var(--radius2)", padding:"10px 14px"}}>
+                <span style={{fontSize:"14px", fontWeight:"600"}}>{m}</span>
+                <input type="number" min="1" max="100" value={nilai[m]} onChange={e => setNilai(p => ({...p, [m]: e.target.value}))}
+                  style={{width:"76px", padding:"7px 10px", borderRadius:"var(--radius2)", border:"1.5px solid var(--border)", fontSize:"15px", fontWeight:"700", textAlign:"center", fontFamily:"var(--mono)"}} />
+              </label>
+            );
+          })}
+        </div>
+
+        <div style={{display:"flex", gap:"10px", alignItems:"center", flexWrap:"wrap"}}>
+          <button className="btn btn-green" onClick={simpan} disabled={saving || !valid}>{saving ? "Menyimpan..." : "💾 Simpan KKM"}</button>
+          <span style={{fontSize:"12px", color:"var(--gray)"}}>
+            {kkmStore.sumber === "db" ? "Sumber: database (berlaku di semua perangkat)" : kkmStore.sumber === "lokal" ? "Sumber: perangkat ini saja" : "Sumber: bawaan (75)"}
+          </span>
+        </div>
+
+        {info && (
+          <div style={{marginTop:"14px", borderRadius:"var(--radius2)", padding:"10px 14px", fontSize:"13px", fontWeight:"600",
+            background: info.tipe === "ok" ? "var(--green3)" : "var(--red3)", color: info.tipe === "ok" ? "var(--green2)" : "var(--red2)"}}>
+            {info.pesan}
+          </div>
+        )}
+
+        {(kkmStore.sumber === "lokal" || info?.tipe === "lokal") && !useDemo && (
+          <div style={{marginTop:"16px", background:"#fffbeb", border:"1px solid #fcd34d", borderRadius:"var(--radius2)", padding:"14px 16px"}}>
+            <div style={{fontSize:"13px", fontWeight:"700", color:"#92400e", marginBottom:"6px"}}>Agar KKM tersimpan di database, jalankan sekali di Supabase → SQL Editor:</div>
+            <pre style={{margin:"0 0 10px", padding:"10px", background:"#fff", borderRadius:"8px", fontSize:"12px", overflowX:"auto", whiteSpace:"pre"}}>{SQL_TABEL_KKM}</pre>
+            <button type="button" className="btn btn-ghost" style={{padding:"6px 14px", fontSize:"12px"}} onClick={salinSql}>{salin ? "✅ Tersalin" : "📋 Salin SQL"}</button>
+            <span style={{fontSize:"12px", color:"#92400e", marginLeft:"10px"}}>Setelah itu klik Simpan KKM lagi.</span>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 // ---- Dashboard Overview ----
 function DashboardPage({ ujianList, hasilList }) {
   const rataRata   = hasilList.length ? Math.round(hasilList.reduce((a,h) => a + (h.nilai||0), 0) / hasilList.length) : 0;
   const ujianAktif = ujianList.filter(u => u.aktif).length;
-  const lulus      = hasilList.filter(h => h.nilai >= 75).length;
+  const lulus      = hasilList.filter(lulusKkm).length;
+  // Rata-rata KKM dari mapel yang ada di data (untuk pewarnaan grafik sebaran nilai)
+  const kkmRata    = hasilList.length ? Math.round(hasilList.reduce((a,h) => a + getKKM(h.mapel), 0) / hasilList.length) : KKM_DEFAULT;
   const pctLulus   = hasilList.length ? Math.round((lulus / hasilList.length) * 100) : 0;
 
   // Distribusi nilai: 0-49, 50-59, 60-69, 70-79, 80-89, 90-100
@@ -1754,7 +1916,7 @@ function DashboardPage({ ujianList, hasilList }) {
             <div style={{display:"flex", alignItems:"flex-end", gap:8, height:120}}>
               {buckets.map((b,i) => {
                 const h = Math.max(4, Math.round((b.count / maxCount) * 100));
-                const isLulus = b.min >= 75;
+                const isLulus = b.min >= kkmRata;
                 return (
                   <div key={i} style={{flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4}}>
                     <div style={{fontSize:10, fontWeight:700, color: b.count > 0 ? (isLulus?"#15803d":"#b45309") : "#cbd5e1"}}>{b.count}</div>
@@ -1773,7 +1935,7 @@ function DashboardPage({ ujianList, hasilList }) {
           )}
           <div style={{display:"flex", gap:12, marginTop:12}}>
             <div style={{display:"flex", alignItems:"center", gap:4, fontSize:10, color:"#64748b"}}>
-              <div style={{width:10,height:10,borderRadius:2,background:"#22c55e"}}/>Lulus (≥75)
+              <div style={{width:10,height:10,borderRadius:2,background:"#22c55e"}}/>Di atas KKM
             </div>
             <div style={{display:"flex", alignItems:"center", gap:4, fontSize:10, color:"#64748b"}}>
               <div style={{width:10,height:10,borderRadius:2,background:"#f59e0b"}}/>Remedi
@@ -1785,7 +1947,7 @@ function DashboardPage({ ujianList, hasilList }) {
         <div style={{background:"#fff", borderRadius:16, padding:20, boxShadow:"0 2px 12px rgba(0,0,0,0.07)", border:"1px solid #f0f0f0", display:"flex", flexDirection:"column", justifyContent:"space-between"}}>
           <div>
             <h3 style={{fontSize:14, fontWeight:700, color:"#1e293b", marginBottom:4}}>🎯 Tingkat Kelulusan</h3>
-            <p style={{fontSize:11, color:"#94a3b8", marginBottom:20}}>Persentase siswa melampaui KKM (75)</p>
+            <p style={{fontSize:11, color:"#94a3b8", marginBottom:20}}>Persentase siswa mencapai KKM (sesuai KKM tiap mapel)</p>
           </div>
           <div style={{display:"flex", alignItems:"center", justifyContent:"center"}}>
             <div style={{position:"relative", width:110, height:110}}>
@@ -1837,12 +1999,12 @@ function DashboardPage({ ujianList, hasilList }) {
                     <td>
                       <div style={{display:"flex", alignItems:"center", gap:6}}>
                         <div style={{width:36, height:6, borderRadius:3, background:"#f1f5f9", overflow:"hidden"}}>
-                          <div style={{width:`${Math.min(100,h.nilai||0)}%`, height:"100%", background: (h.nilai||0)>=75?"#22c55e":"#f59e0b"}}/>
+                          <div style={{width:`${Math.min(100,h.nilai||0)}%`, height:"100%", background: lulusKkm(h)?"#22c55e":"#f59e0b"}}/>
                         </div>
                         <strong style={{fontFamily:"var(--mono)"}}>{h.nilai}</strong>
                       </div>
                     </td>
-                    <td><span className={`badge ${h.nilai >= 75 ? "badge-green" : "badge-red"}`}>{h.nilai >= 75 ? "Lulus" : "Remedi"}</span></td>
+                    <td><span className={`badge ${lulusKkm(h) ? "badge-green" : "badge-red"}`}>{lulusKkm(h) ? "Lulus" : "Remedi"}</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -2118,12 +2280,28 @@ function UjianPage({ ujianList, onRefresh }) {
   const [showForm, setShowForm] = useState(false);
   const [showKey, setShowKey] = useState(null);
   const [editUjian, setEditUjian] = useState(null); // ujian yang sedang diedit
-  const [form, setForm] = useState({ mapel: MAPEL[0], kelas: "", durasi: 60, jam_buka: "", jam_tutup: "" });
+  const [form, setForm] = useState({ mapel: MAPEL[0], kelas: "", durasi: 60, jam_buka: "", jam_tutup: "", acak_soal: false, acak_opsi: false });
   const [saving, setSaving] = useState(false);
   const [confirmHapus, setConfirmHapus] = useState(null); // ujian yang akan dihapus
 
+  // Simpan ujian. Jika kolom acak_soal/acak_opsi belum ada di Supabase, simpan tanpa kolom itu
+  // dan beri tahu guru (supaya pembuatan ujian tidak gagal total).
+  const simpanUjian = async (path, method, body) => {
+    try {
+      await supabase(path, { method, body: JSON.stringify(body) });
+    } catch (e) {
+      if (/acak_/i.test(e.message || "")) {
+        const { acak_soal, acak_opsi, ...tanpaAcak } = body;
+        await supabase(path, { method, body: JSON.stringify(tanpaAcak) });
+        if (acak_soal || acak_opsi) {
+          alert("Ujian tersimpan, tetapi pengaturan ACAK belum aktif karena kolomnya belum ada di database.\n\nJalankan di Supabase > SQL Editor:\n\nalter table ujian add column if not exists acak_soal boolean default false, add column if not exists acak_opsi boolean default false;\nnotify pgrst, 'reload schema';");
+        }
+      } else throw e;
+    }
+  };
+
   const resetForm = () => {
-    setForm({ mapel: MAPEL[0], kelas: "", durasi: 60, jam_buka: "", jam_tutup: "" });
+    setForm({ mapel: MAPEL[0], kelas: "", durasi: 60, jam_buka: "", jam_tutup: "", acak_soal: false, acak_opsi: false });
     setEditUjian(null);
     setShowForm(false);
   };
@@ -2135,7 +2313,7 @@ function UjianPage({ ujianList, onRefresh }) {
       if (useDemo) {
         DEMO_UJIAN.push({ ...form, durasi: Number(form.durasi), key: genKey(), aktif: true, soal: [], id: Date.now() });
       } else {
-        await supabase("ujian", { method: "POST", body: JSON.stringify({ mapel: form.mapel, kelas: form.kelas, durasi: Number(form.durasi), key: genKey(), aktif: true, jam_buka: form.jam_buka || null, jam_tutup: form.jam_tutup || null }) });
+        await simpanUjian("ujian", "POST", { mapel: form.mapel, kelas: form.kelas, durasi: Number(form.durasi), key: genKey(), aktif: true, jam_buka: form.jam_buka || null, jam_tutup: form.jam_tutup || null, acak_soal: !!form.acak_soal, acak_opsi: !!form.acak_opsi });
       }
       await onRefresh();
       resetForm();
@@ -2149,9 +2327,9 @@ function UjianPage({ ujianList, onRefresh }) {
     try {
       if (useDemo) {
         const idx = DEMO_UJIAN.findIndex(u => u.id === editUjian.id);
-        if (idx > -1) DEMO_UJIAN[idx] = { ...DEMO_UJIAN[idx], mapel: form.mapel, kelas: form.kelas, durasi: Number(form.durasi), jam_buka: form.jam_buka || null, jam_tutup: form.jam_tutup || null };
+        if (idx > -1) DEMO_UJIAN[idx] = { ...DEMO_UJIAN[idx], mapel: form.mapel, kelas: form.kelas, durasi: Number(form.durasi), jam_buka: form.jam_buka || null, jam_tutup: form.jam_tutup || null, acak_soal: !!form.acak_soal, acak_opsi: !!form.acak_opsi };
       } else {
-        await supabase(`ujian?id=eq.${editUjian.id}`, { method: "PATCH", body: JSON.stringify({ mapel: form.mapel, kelas: form.kelas, durasi: Number(form.durasi), jam_buka: form.jam_buka || null, jam_tutup: form.jam_tutup || null }) });
+        await simpanUjian(`ujian?id=eq.${editUjian.id}`, "PATCH", { mapel: form.mapel, kelas: form.kelas, durasi: Number(form.durasi), jam_buka: form.jam_buka || null, jam_tutup: form.jam_tutup || null, acak_soal: !!form.acak_soal, acak_opsi: !!form.acak_opsi });
       }
       await onRefresh();
       resetForm();
@@ -2253,7 +2431,7 @@ function UjianPage({ ujianList, onRefresh }) {
 
   const bukaFormEdit = (ujian) => {
     setEditUjian(ujian);
-    setForm({ mapel: ujian.mapel, kelas: ujian.kelas, durasi: ujian.durasi, jam_buka: ujian.jam_buka || "", jam_tutup: ujian.jam_tutup || "" });
+    setForm({ mapel: ujian.mapel, kelas: ujian.kelas, durasi: ujian.durasi, jam_buka: ujian.jam_buka || "", jam_tutup: ujian.jam_tutup || "", acak_soal: !!ujian.acak_soal, acak_opsi: !!ujian.acak_opsi });
     setShowForm(true);
     window.scrollTo(0, 0);
   };
@@ -2311,6 +2489,23 @@ function UjianPage({ ujianList, onRefresh }) {
             <div style={{background:"rgba(255,255,255,0.7)", borderRadius:"8px", padding:"10px 14px", fontSize:"12px", marginBottom:"16px", color:"#92400e"}}>
               💡 Jam Buka/Tutup opsional. Kosongkan jika tidak perlu jadwal otomatis.
             </div>
+            <div style={{background:"#fff", border:"1.5px solid var(--border)", borderRadius:"var(--radius2)", padding:"14px 16px", marginBottom:"16px"}}>
+              <div style={{fontSize:"13px", fontWeight:"700", color:"var(--navy3)", marginBottom:"10px"}}>🔀 Pengacakan (opsional)</div>
+              <label style={{display:"flex", alignItems:"flex-start", gap:"10px", cursor:"pointer", marginBottom:"12px"}}>
+                <input type="checkbox" checked={!!form.acak_soal} onChange={e => setForm(p=>({...p, acak_soal:e.target.checked}))} style={{width:"20px", height:"20px", marginTop:"2px", flexShrink:0}} />
+                <span style={{fontSize:"13px", lineHeight:"1.5"}}>
+                  <strong>Acak urutan soal</strong><br/>
+                  <span style={{color:"var(--gray)", fontSize:"12px"}}>Tiap siswa mendapat urutan nomor yang berbeda. <b>Biarkan tidak dicentang</b> untuk Bahasa Inggris / Bahasa Indonesia atau soal dengan teks bacaan, agar soal tetap berurutan.</span>
+                </span>
+              </label>
+              <label style={{display:"flex", alignItems:"flex-start", gap:"10px", cursor:"pointer"}}>
+                <input type="checkbox" checked={!!form.acak_opsi} onChange={e => setForm(p=>({...p, acak_opsi:e.target.checked}))} style={{width:"20px", height:"20px", marginTop:"2px", flexShrink:0}} />
+                <span style={{fontSize:"13px", lineHeight:"1.5"}}>
+                  <strong>Acak urutan pilihan jawaban (A–D)</strong><br/>
+                  <span style={{color:"var(--gray)", fontSize:"12px"}}>Jangan dicentang jika ada pilihan seperti "A dan B benar" atau "semua benar". Soal Benar/Salah tidak pernah diacak.</span>
+                </span>
+              </label>
+            </div>
             <div style={{display:"flex", gap:"8px"}}>
               <button className="btn btn-green" onClick={editUjian ? handleEdit : handleCreate} disabled={saving}>
                 {saving ? "Menyimpan..." : editUjian ? "💾 Simpan Perubahan" : "✅ Buat Ujian"}
@@ -2329,7 +2524,7 @@ function UjianPage({ ujianList, onRefresh }) {
                   <h3 style={{margin:0}}>{u.mapel}</h3>
                   <span className={`badge ${u.aktif ? "badge-green" : "badge-red"}`}>{u.aktif ? "Aktif" : "Nonaktif"}</span>
                 </div>
-                <div className="meta">Kelas {u.kelas} • {u.durasi} menit • {(u.soal||[]).length} soal</div>
+                <div className="meta">Kelas {u.kelas} • {u.durasi} menit • {(u.soal||[]).length} soal • {u.acak_soal ? "🔀 soal diacak" : "soal berurutan"}</div>
                 {u.jam_buka && <div style={{fontSize:"12px", color:"var(--gray)", marginBottom:"4px"}}>⏰ {u.jam_buka} – {u.jam_tutup||"∞"}</div>}
                 {jadwal && <span className={`badge ${jadwal.color}`} style={{marginBottom:"8px", display:"inline-block"}}>{jadwal.label}</span>}
                 <div className="key-badge">{u.key}</div>
@@ -3736,8 +3931,8 @@ function MonitorPage({ ujianList }) {
                     </td>
                     <td>{h.kelas}</td>
                     <td>{h.mapel}</td>
-                    <td><strong style={{fontFamily:"var(--mono)", color: h.nilai>=75?"var(--green2)":"var(--red2)"}}>{h.nilai}</strong></td>
-                    <td><span className={`badge ${h.nilai>=75?"badge-green":"badge-red"}`}>{h.nilai>=75?"Lulus":"Remedi"}</span></td>
+                    <td><strong style={{fontFamily:"var(--mono)", color: lulusKkm(h)?"var(--green2)":"var(--red2)"}}>{h.nilai}</strong></td>
+                    <td><span className={`badge ${lulusKkm(h)?"badge-green":"badge-red"}`}>{lulusKkm(h)?"Lulus":"Remedi"}</span></td>
                     <td>
                       {(h.pelanggaran||0) === 0
                         ? <span style={{color:"var(--green2)", fontSize:"12px"}}>✅ Bersih</span>
@@ -3817,7 +4012,6 @@ function BukaKunciManual({ onBukaKunci }) {
 }
 
 // ---- Hasil Ujian ----
-const KKM_HASIL = 75;
 
 function muatXLSX() {
   return new Promise((resolve, reject) => {
@@ -3832,9 +4026,9 @@ function muatXLSX() {
 
 function hitungStatKelas(rows) {
   const n = rows.length;
-  if (!n) return { n: 0, rata: 0, max: 0, min: 0, lulus: 0, remedi: 0, pct: 0, curiga: 0 };
+  if (!n) return { n: 0, rata: 0, max: 0, min: 0, lulus: 0, remedi: 0, pct: 0, curiga: 0, kkm: KKM_DEFAULT };
   const nil = rows.map(h => Number(h.nilai) || 0);
-  const lulus = nil.filter(v => v >= KKM_HASIL).length;
+  const lulus = rows.filter(lulusKkm).length;          // KKM mengikuti mapel tiap baris
   return {
     n,
     rata: Math.round(nil.reduce((a, b) => a + b, 0) / n),
@@ -3844,6 +4038,7 @@ function hitungStatKelas(rows) {
     remedi: n - lulus,
     pct: Math.round((lulus / n) * 100),
     curiga: rows.filter(h => h.mencurigakan).length,
+    kkm: Math.round(rows.reduce((a, h) => a + getKKM(h.mapel), 0) / n),   // rata-rata KKM (untuk pewarnaan rata-rata)
   };
 }
 
@@ -3893,9 +4088,9 @@ function HasilPage({ hasilList, ujianList }) {
   };
   const lihatSiswaKelas = (k) => { setFKelas(k); setTabView("siswa"); };
 
-  const warnaNilai = (v) => v >= KKM_HASIL ? "var(--green2)" : "var(--red2)";
-  const barisSiswa = (list) => list.map((h, i) => [i + 1, h.nama_siswa, kelasLabel(h), h.mapel, h.benar, h.total, h.nilai, h.nilai >= KKM_HASIL ? "Lulus" : "Remedi", h.pelanggaran || 0, h.mencurigakan ? "Ya" : "Tidak"]);
-  const HEADER_SISWA = ["No", "Nama", "Kelas", "Mata Pelajaran", "Benar", "Total", "Nilai", "Status", "Pelanggaran", "Mencurigakan"];
+  const warnaNilai = (v, kkm) => v >= kkm ? "var(--green2)" : "var(--red2)";
+  const barisSiswa = (list) => list.map((h, i) => [i + 1, h.nama_siswa, kelasLabel(h), h.mapel, h.benar, h.total, h.nilai, getKKM(h.mapel), lulusKkm(h) ? "Lulus" : "Remedi", h.pelanggaran || 0, h.mencurigakan ? "Ya" : "Tidak"]);
+  const HEADER_SISWA = ["No", "Nama", "Kelas", "Mata Pelajaran", "Benar", "Total", "Nilai", "KKM", "Status", "Pelanggaran", "Mencurigakan"];
 
   const exportCSV = () => {
     if (filtered.length === 0) return alert("Belum ada data untuk diexport.");
@@ -3924,11 +4119,11 @@ function HasilPage({ hasilList, ujianList }) {
       XLSX.utils.book_append_sheet(wb, wsRekap, "Rekap Kelas");
       grupKeys.forEach(k => {
         const aoa = [
-          ["No", "Nama", "Kelas", "Mata Pelajaran", "Benar", "Total", "Nilai", "Status", "Pelanggaran"],
-          ...grup[k].map((h, i) => [i + 1, h.nama_siswa, k, h.mapel, h.benar, h.total, h.nilai, h.nilai >= KKM_HASIL ? "Lulus" : "Remedi", h.pelanggaran || 0]),
+          ["No", "Nama", "Kelas", "Mata Pelajaran", "Benar", "Total", "Nilai", "KKM", "Status", "Pelanggaran"],
+          ...grup[k].map((h, i) => [i + 1, h.nama_siswa, k, h.mapel, h.benar, h.total, h.nilai, getKKM(h.mapel), lulusKkm(h) ? "Lulus" : "Remedi", h.pelanggaran || 0]),
         ];
         const ws = XLSX.utils.aoa_to_sheet(aoa);
-        ws["!cols"] = [{ wch: 5 }, { wch: 32 }, { wch: 9 }, { wch: 22 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 9 }, { wch: 12 }];
+        ws["!cols"] = [{ wch: 5 }, { wch: 32 }, { wch: 9 }, { wch: 22 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 9 }, { wch: 12 }];
         XLSX.utils.book_append_sheet(wb, ws, k.replace(/[\\\/\?\*\[\]:]/g, "-").slice(0, 31));
       });
       XLSX.writeFile(wb, `Rekap-Nilai-${fKelas || (fTingkat ? "Kelas" + fTingkat : "Semua-Kelas")}-${fMapel || "Semua-Mapel"}.xlsx`);
@@ -3985,11 +4180,17 @@ function HasilPage({ hasilList, ujianList }) {
           </div>
         </div>
 
+        {fMapel && (
+          <div style={{fontSize:"12px", color:"var(--gray)", marginBottom:"12px"}}>
+            KKM {fMapel}: <strong>{getKKM(fMapel)}</strong> (diatur admin di menu Pengaturan)
+          </div>
+        )}
+
         {/* Ringkasan */}
         <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:"10px", marginBottom:"18px"}}>
           {[
             ["Hasil Masuk", ringkas.n, "#1d4ed8", "#dbeafe"],
-            ["Rata-rata", ringkas.rata, warnaNilai(ringkas.rata), "#f3e8ff"],
+            ["Rata-rata", ringkas.rata, warnaNilai(ringkas.rata, ringkas.kkm), "#f3e8ff"],
             ["Lulus", `${ringkas.lulus} (${ringkas.pct}%)`, "#15803d", "#dcfce7"],
             ["Remedi", ringkas.remedi, "#b91c1c", "#fee2e2"],
             ...(tabView === "kelas" ? [["Kelas Sudah Ujian", `${kelasSudahUjian}/${semuaKelas.length}`, "#b45309", "#fef3c7"]] : []),
@@ -4023,7 +4224,7 @@ function HasilPage({ hasilList, ujianList }) {
                       ) : (
                         <>
                           <td style={{fontFamily:"var(--mono)"}}>{r.n}</td>
-                          <td><strong style={{fontFamily:"var(--mono)", color: warnaNilai(r.rata)}}>{r.rata}</strong></td>
+                          <td><strong style={{fontFamily:"var(--mono)", color: warnaNilai(r.rata, r.kkm)}}>{r.rata}</strong></td>
                           <td style={{fontFamily:"var(--mono)"}}>{r.max}</td>
                           <td style={{fontFamily:"var(--mono)"}}>{r.min}</td>
                           <td style={{fontFamily:"var(--mono)", color:"var(--green2)"}}>{r.lulus}</td>
@@ -4058,7 +4259,7 @@ function HasilPage({ hasilList, ujianList }) {
                   <div className="table-wrap">
                     <table>
                       <thead>
-                        <tr><th>#</th><th>Nama</th><th>Mata Pelajaran</th><th>Benar</th><th>Total</th><th>Nilai</th><th>Status</th><th>Pelanggaran</th></tr>
+                        <tr><th>#</th><th>Nama</th><th>Mata Pelajaran</th><th>Benar</th><th>Total</th><th>Nilai</th><th>KKM</th><th>Status</th><th>Pelanggaran</th></tr>
                       </thead>
                       <tbody>
                         {grup[k].map((h, i) => (
@@ -4071,8 +4272,9 @@ function HasilPage({ hasilList, ujianList }) {
                             <td>{h.mapel}</td>
                             <td style={{fontFamily:"var(--mono)"}}>{h.benar}</td>
                             <td style={{fontFamily:"var(--mono)"}}>{h.total}</td>
-                            <td><strong style={{fontFamily:"var(--mono)", color: warnaNilai(h.nilai)}}>{h.nilai}</strong></td>
-                            <td><span className={`badge ${h.nilai >= KKM_HASIL ? "badge-green" : "badge-red"}`}>{h.nilai >= KKM_HASIL ? "Lulus" : "Remedi"}</span></td>
+                            <td><strong style={{fontFamily:"var(--mono)", color: warnaNilai(h.nilai, getKKM(h.mapel))}}>{h.nilai}</strong></td>
+                            <td style={{fontFamily:"var(--mono)", color:"var(--gray)"}}>{getKKM(h.mapel)}</td>
+                            <td><span className={`badge ${lulusKkm(h) ? "badge-green" : "badge-red"}`}>{lulusKkm(h) ? "Lulus" : "Remedi"}</span></td>
                             <td>
                               {(h.pelanggaran||0) === 0
                                 ? <span style={{color:"var(--green2)", fontSize:"12px", fontWeight:"600"}}>✅ Bersih</span>
@@ -4099,11 +4301,10 @@ function HasilPage({ hasilList, ujianList }) {
 function StudentExam({ data, onFinish }) {
   const { ujian, siswa } = data;
   // Acak soal dan opsi saat komponen pertama kali dimuat
-  const [soal] = useState(() => shuffleSoalDanOpsi(ujian.soal));
+  const [soal] = useState(() => shuffleSoalDanOpsi(ujian.soal, !!ujian.acak_soal, !!ujian.acak_opsi));
   const [current, setCurrent] = useState(0);
   const [jawaban, setJawaban] = useState(Array(soal.length).fill(null));
   const [timeLeft, setTimeLeft] = useState(ujian.durasi * 60);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [tabViolation, setTabViolation] = useState(0);
@@ -4422,7 +4623,6 @@ function StudentExam({ data, onFinish }) {
     if (submittedRef.current) return;      // cegah klik ganda / timer + klik bersamaan
     submittedRef.current = true;
     setSubmitting(true);
-    setShowConfirm(false);
     setShowReview(false);
 
     const benar = soal.filter((s, i) => jawaban[i] === s.jawaban).length;
@@ -4531,9 +4731,14 @@ function StudentExam({ data, onFinish }) {
             ))}
           </div>
 
+          {belumDijawab > 0 && (
+            <div style={{background:"var(--red3)", color:"var(--red2)", borderRadius:"var(--radius2)", padding:"10px 14px", fontSize:"13px", fontWeight:"600", marginBottom:"12px", textAlign:"center"}}>
+              ⚠️ Masih ada {belumDijawab} soal belum dijawab
+            </div>
+          )}
           <div style={{display:"flex", gap:"12px"}}>
             <button className="btn btn-ghost" style={{flex:1, padding:"14px"}} onClick={() => setShowReview(false)}>← Kembali ke Soal</button>
-            <button className="btn btn-green" style={{flex:1, padding:"14px", fontSize:"15px", fontWeight:"700"}} onClick={() => setShowConfirm(true)}>
+            <button className="btn btn-green" style={{flex:1, padding:"14px", fontSize:"15px", fontWeight:"700"}} onClick={() => handleSubmit(false)}>
               ✅ Kumpulkan Ujian
             </button>
           </div>
@@ -4800,24 +5005,9 @@ function StudentExam({ data, onFinish }) {
             </div>
           </div>
           <button className="btn btn-green" style={{width:"100%", marginBottom:"8px"}} onClick={() => setShowReview(true)} disabled={locked}>📋 Review Jawaban</button>
-          <button className="btn btn-ghost" style={{width:"100%", fontSize:"12px"}} onClick={() => setShowConfirm(true)} disabled={locked}>Langsung Kumpulkan</button>
         </div>
       </div>
 
-      {showConfirm && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h2>Kumpulkan Ujian?</h2>
-            <p>Dijawab: <strong>{dijawab}</strong> dari <strong>{soal.length}</strong> soal.</p>
-            {belumDijawab > 0 && <p style={{color:"var(--red2)", fontSize:"13px", marginTop:"6px"}}>⚠️ {belumDijawab} soal belum dijawab — akan dianggap salah.</p>}
-            {tabViolation > 0 && <p style={{color:"var(--red2)", fontSize:"13px", marginTop:"6px"}}>📋 Tercatat {tabViolation} pelanggaran.</p>}
-            <div style={{display:"flex", gap:"8px", marginTop:"20px"}}>
-              <button className="btn btn-green" style={{flex:1}} onClick={() => handleSubmit(false)}>✅ Ya, Kumpulkan</button>
-              <button className="btn btn-ghost" style={{flex:1}} onClick={() => setShowConfirm(false)}>Kembali</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -4828,7 +5018,6 @@ function StudentExam({ data, onFinish }) {
 // RESULT SCREEN
 // ============================================================
 function ResultScreen({ result, onBack }) {
-  const lulus = result.nilai >= 75;
   const [sendStatus, setSendStatus] = useState(() => result.is_google_form || useDemo ? "done" : kirimHasil.status);
   useEffect(() => {
     if (result.is_google_form || useDemo) return;
@@ -4845,52 +5034,23 @@ function ResultScreen({ result, onBack }) {
   return (
     <div className="result-wrap">
       <div className="result-card">
-        <div className="result-emoji">{lulus ? "🎉" : "💪"}</div>
-        {result.is_google_form ? (
-          <>
-            <div style={{width:"140px",height:"140px",borderRadius:"50%",border:"8px solid var(--blue)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px",fontSize:"48px"}}>
-              📝
-            </div>
-            <h2>Ujian Selesai!</h2>
-            <p>{result.nama_siswa} • Kelas {result.kelas} • {result.mapel}</p>
-            <div style={{background:"var(--blue3)", borderRadius:"var(--radius2)", padding:"14px", marginBottom:"20px", fontSize:"14px", color:"var(--blue2)", fontWeight:"600", textAlign:"left"}}>
-              ✅ Anda telah menyelesaikan ujian via Google Form.<br/>
-              <span style={{fontSize:"12px", fontWeight:"500", color:"var(--navy3)"}}>Nilai Anda akan direkap langsung oleh guru dari Google Form.</span>
-            </div>
-            {result.pelanggaran > 0 && (
-              <div style={{background:"var(--red3)", borderRadius:"var(--radius2)", padding:"12px", marginBottom:"20px", fontSize:"13px", color:"var(--red2)", fontWeight:"600"}}>
-                ⚠️ Tercatat {result.pelanggaran} pelanggaran selama ujian
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            <div className={`result-score-ring ${lulus ? "lulus" : "gagal"}`}>
-              <div className={`result-score-val ${lulus ? "lulus" : "gagal"}`}>{result.nilai}</div>
-            </div>
-            <h2>{lulus ? "Selamat, Anda Lulus!" : "Tetap Semangat!"}</h2>
-            <p>{result.nama_siswa} • Kelas {result.kelas} • {result.mapel}</p>
-            <div className="result-stats">
-              <div className="result-stat"><div className="val" style={{color:"var(--green2)"}}>{result.benar}</div><div className="lbl">Benar</div></div>
-              <div className="result-stat"><div className="val" style={{color:"var(--red2)"}}>{result.total - result.benar}</div><div className="lbl">Salah</div></div>
-              <div className="result-stat"><div className="val">{result.total}</div><div className="lbl">Total Soal</div></div>
-            </div>
-            <div style={{background: lulus ? "var(--green3)" : "var(--red3)", borderRadius:"var(--radius2)", padding:"12px", marginBottom:"20px", fontSize:"14px", color: lulus ? "var(--green2)" : "var(--red2)", fontWeight:"600"}}>
-              {lulus ? "✅ Nilai Anda memenuhi KKM (75)" : "❌ Nilai belum memenuhi KKM (75) — Perlu remedi"}
-            </div>
-          </>
-        )}
+        <div style={{fontSize:"64px", lineHeight:1, marginBottom:"16px"}}>🎉</div>
+        <h2 style={{marginBottom:"10px"}}>Selamat!</h2>
+        <p style={{fontSize:"16px", lineHeight:1.6, color:"var(--navy3)", marginBottom:"8px"}}>
+          Anda telah selesai melaksanakan <strong>Ujian Akhir Semester</strong>.
+        </p>
+        <p style={{fontSize:"13px", color:"var(--gray)", marginBottom:"24px"}}>{result.nama_siswa} • Kelas {result.kelas}{result.mapel ? ` • ${result.mapel}` : ""}</p>
         {!result.is_google_form && !useDemo && (
           <div style={{
             borderRadius:"var(--radius2)", padding:"10px 14px", marginBottom:"14px", fontSize:"13px", fontWeight:"600", textAlign:"left",
             background: sendStatus === "done" ? "var(--green3)" : sendStatus === "error" ? "var(--red3)" : "var(--blue3)",
             color: sendStatus === "done" ? "var(--green2)" : sendStatus === "error" ? "var(--red2)" : "var(--blue2)",
           }}>
-            {sendStatus === "done" && "✅ Nilai sudah tersimpan di server."}
-            {sendStatus === "sending" && "⏳ Mengirim nilai ke server... (jangan tutup halaman ini)"}
+            {sendStatus === "done" && "✅ Jawaban Anda sudah tersimpan."}
+            {sendStatus === "sending" && "⏳ Mengirim jawaban... (jangan tutup halaman ini)"}
             {sendStatus === "error" && (
               <>
-                ⚠️ Nilai belum terkirim (koneksi bermasalah). Sistem mencoba lagi otomatis — jangan tutup halaman ini.
+                ⚠️ Jawaban belum terkirim (koneksi bermasalah). Sistem mencoba lagi otomatis — jangan tutup halaman ini.
                 <button className="btn btn-red" style={{display:"block", marginTop:"8px", padding:"6px 14px", fontSize:"12px"}} onClick={() => kirimHasil.flush()}>🔄 Kirim Ulang Sekarang</button>
               </>
             )}
