@@ -4480,11 +4480,30 @@ function StudentExam({ data, onFinish }) {
   const riwayatPelanggaranRef = useRef([]); // log pelanggaran untuk dikirim ke monitor
   const wakeLockRef = useRef(null); // Wake Lock sentinel untuk paksa layar tetap nyala
   const [wakeLockAktif, setWakeLockAktif] = useState(false); // status wake lock untuk UI
-  // Threshold bertingkat untuk membedakan screen timeout HP vs cheating
-  const ABAIKAN_MS = 30000;        // < 30 detik = diabaikan (screen timeout normal)
-  const WARNING_MS = 90000;        // 30-90 detik = warning (log saja, tidak hitung pelanggaran)
-                                   // > 90 detik = pelanggaran (hitung +1)
-  const MAX_VIOLATIONS = 3;
+  // ── ATURAN KETAT: 1 pelanggaran = ujian langsung terkunci ────
+  // Hanya pengawas (kode kunci) yang bisa membuka kembali.
+  const MAX_VIOLATIONS = 1;
+  const ABAIKAN_MS = 2500;   // layar gelap/keluar < 2,5 detik = gangguan sistem singkat, hanya dicatat
+  const BLUR_MS = 1500;      // jendela kehilangan fokus > 1,5 detik = pelanggaran
+  const SPLIT_RATIO = 0.7;   // area jendela < 70% area layar (HP/tablet) = layar terbelah / jendela mengambang
+  const pelanggaranAktifRef = useRef(false);   // cegah 1 kejadian terhitung berkali-kali
+  useEffect(() => {
+    if (!locked && !showWarning) pelanggaranAktifRef.current = false;
+  }, [locked, showWarning]);
+
+  // Pencatat pelanggaran terpusat: catat ke log + kunci ujian seketika
+  const catatPelanggaran = (jenis, pesan, durasiDetik) => {
+    if (submittedRef.current || pelanggaranAktifRef.current) return;
+    pelanggaranAktifRef.current = true;
+    riwayatPelanggaranRef.current = [
+      ...riwayatPelanggaranRef.current,
+      { waktu: new Date().toISOString(), level: "pelanggaran", jenis, ...(durasiDetik ? { durasi_detik: durasiDetik } : {}) },
+    ];
+    setTabViolation(v => v + 1);
+    setLocked(true);
+    setWarningMsg(`🔒 Ujian dikunci! ${pesan} Hubungi pengawas untuk membuka kunci.`);
+    setShowWarning(true);
+  };
 
   // ── Fullscreen ──────────────────────────────────────────────
   const enterFullscreen = () => {
@@ -4545,26 +4564,7 @@ function StudentExam({ data, onFinish }) {
       const fs = !!(document.fullscreenElement || document.webkitFullscreenElement);
       setIsFullscreen(fs);
       if (!fs && !submitting) {
-        // Catat di riwayat detail
-        riwayatPelanggaranRef.current = [
-          ...riwayatPelanggaranRef.current,
-          {
-            waktu: new Date().toISOString(),
-            level: "pelanggaran",
-            jenis: "keluar_fullscreen",
-          },
-        ];
-        setTabViolation(v => {
-          const nv = v + 1;
-          if (nv >= MAX_VIOLATIONS) {
-            setLocked(true);
-            setWarningMsg(`🔒 Ujian dikunci! Anda keluar layar penuh ${nv}x. Hubungi pengawas.`);
-          } else {
-            setWarningMsg(`⚠️ PERINGATAN ${nv}/${MAX_VIOLATIONS}: Anda keluar dari layar penuh!`);
-          }
-          setShowWarning(true);
-          return nv;
-        });
+        catatPelanggaran("keluar_fullscreen", "Anda keluar dari layar penuh.");
       }
     };
     document.addEventListener("fullscreenchange", onFsChange);
@@ -4575,71 +4575,101 @@ function StudentExam({ data, onFinish }) {
     };
   }, [submitting]);
 
-  // ── Deteksi pindah tab vs layar mati (THRESHOLD BERTINGKAT) ─
-  // < 30 detik  → diabaikan (screen timeout normal HP, siswa berpikir)
-  // 30-90 detik → warning (dicatat di log, tidak hitung pelanggaran)
-  // > 90 detik  → pelanggaran (hitung +1, kunci kalau sudah 3x)
+  // ── Deteksi 1: meninggalkan aplikasi / pindah tab / layar mati ──
+  // Berlaku untuk setiap kepergian >= 2,5 detik (tidak ada lagi toleransi 30-90 detik).
   useEffect(() => {
     const onVisibility = () => {
-      if (document.hidden && !submitting) {
-        // Layar mulai gelap / tab disembunyikan
+      if (submitting) return;
+      if (document.hidden) {
         hiddenSinceRef.current = Date.now();
-        setTimerPaused(true); // pause timer dulu
-      } else if (!document.hidden && !submitting) {
-        // Layar menyala kembali / kembali ke tab
-        setTimerPaused(false); // lanjutkan timer
-        if (hiddenSinceRef.current) {
-          const durasi = Date.now() - hiddenSinceRef.current;
-          const durasiDetik = Math.round(durasi / 1000);
-          hiddenSinceRef.current = null;
-
-          if (durasi < ABAIKAN_MS) {
-            // < 30 detik: kemungkinan besar screen timeout / siswa berpikir
-            // Tidak dicatat sama sekali — terlalu sering kalau dicatat
-            return;
-          }
-
-          if (durasi < WARNING_MS) {
-            // 30-90 detik: WARNING — dicatat di log untuk dilihat guru,
-            // tapi tidak menambah counter pelanggaran
-            riwayatPelanggaranRef.current = [
-              ...riwayatPelanggaranRef.current,
-              {
-                waktu: new Date().toISOString(),
-                durasi_detik: durasiDetik,
-                level: "warning",
-                jenis: "layar_gelap",
-              },
-            ];
-            return;
-          }
-
-          // > 90 detik: PELANGGARAN sungguhan
-          riwayatPelanggaranRef.current = [
-            ...riwayatPelanggaranRef.current,
-            {
-              waktu: new Date().toISOString(),
-              durasi_detik: durasiDetik,
-              level: "pelanggaran",
-              jenis: "tinggalkan_ujian",
-            },
-          ];
-          setTabViolation(v => {
-            const nv = v + 1;
-            if (nv >= MAX_VIOLATIONS) {
-              setLocked(true);
-              setWarningMsg(`🔒 Ujian dikunci! Anda terdeteksi meninggalkan ujian ${nv}x. Hubungi pengawas.`);
-            } else {
-              setWarningMsg(`⚠️ PERINGATAN ${nv}/${MAX_VIOLATIONS}: Anda meninggalkan halaman ujian selama ${durasiDetik} detik!`);
-            }
-            setShowWarning(true);
-            return nv;
-          });
-        }
+        setTimerPaused(true);
+        return;
       }
+      setTimerPaused(false);
+      if (!hiddenSinceRef.current) return;
+      const durasi = Date.now() - hiddenSinceRef.current;
+      const detik = Math.round(durasi / 1000);
+      hiddenSinceRef.current = null;
+      if (durasi < ABAIKAN_MS) {
+        riwayatPelanggaranRef.current = [
+          ...riwayatPelanggaranRef.current,
+          { waktu: new Date().toISOString(), durasi_detik: detik, level: "warning", jenis: "keluar_singkat" },
+        ];
+        return;
+      }
+      catatPelanggaran("tinggalkan_ujian", `Anda terdeteksi meninggalkan halaman ujian (${detik} detik).`, detik);
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [submitting]);
+
+  // ── Deteksi 2: jendela kehilangan fokus ─────────────────────
+  // Menangkap kasus yang TIDAK memicu "layar gelap": layar terbelah/Slide Over, panel
+  // notifikasi atau Control Center di iPhone, jendela mengambang, alt-tab di laptop.
+  // Fokus yang pindah ke iframe Google Form dianggap normal.
+  useEffect(() => {
+    if (submitting) return;
+    let t = null;
+    const onBlur = () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        if (document.hidden) return;                       // ditangani deteksi 1
+        const ae = document.activeElement;
+        if (ae && ae.tagName === "IFRAME") return;         // fokus di Google Form = normal
+        if (document.hasFocus()) return;
+        catatPelanggaran("jendela_kehilangan_fokus", "Layar ujian kehilangan fokus (membuka aplikasi/jendela lain, layar terbelah, atau panel notifikasi).");
+      }, BLUR_MS);
+    };
+    const onFocus = () => clearTimeout(t);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [submitting]);
+
+  // ── Deteksi 3: layar terbelah / 2 jendela / jendela mengambang ──
+  // Khusus HP & tablet (layar sentuh). Ukuran jendela dibandingkan dengan ukuran layar
+  // sebenarnya; saat split-screen jendela ujian mengecil jauh. Dicek saat resize,
+  // saat rotasi, dan berkala (3 detik) karena sebagian browser tidak mengirim event resize.
+  useEffect(() => {
+    if (submitting) return;
+    const sentuh = (navigator.maxTouchPoints || 0) > 0 && window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    if (!sentuh) return;
+    let abaikanSampai = Date.now() + 2500;      // beri waktu layar stabil saat mulai/rotasi
+    let t = null;
+    const rasio = () => {
+      const w = window.screen.width, h = window.screen.height;
+      const landscape = window.innerWidth > window.innerHeight;
+      const sw = landscape ? Math.max(w, h) : Math.min(w, h);
+      const sh = landscape ? Math.min(w, h) : Math.max(w, h);
+      return (window.innerWidth * window.innerHeight) / (sw * sh);
+    };
+    const kecil = () => {
+      const ae = document.activeElement;
+      if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) return false; // keyboard virtual
+      return rasio() < SPLIT_RATIO;
+    };
+    const periksa = () => {
+      if (Date.now() < abaikanSampai || document.hidden) return;
+      if (kecil()) catatPelanggaran("layar_terbelah", "Terdeteksi layar terbelah / dua jendela / jendela mengambang.");
+    };
+    const onResize = () => {
+      clearTimeout(t);
+      t = setTimeout(periksa, 1200);             // harus bertahan 1,2 detik (bukan transisi rotasi)
+    };
+    const onOrientation = () => { abaikanSampai = Date.now() + 2000; };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onOrientation);
+    const iv = setInterval(periksa, 3000);
+    const awal = setTimeout(periksa, 2600);
+    return () => {
+      clearTimeout(t); clearTimeout(awal); clearInterval(iv);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onOrientation);
+    };
   }, [submitting]);
 
   // ── Blokir klik kanan & shortcut ───────────────────────────
@@ -4788,7 +4818,7 @@ function StudentExam({ data, onFinish }) {
       nama_siswa: siswa.nama, kelas: siswa.kelas, mapel: ujian.mapel,
       benar, total: soal.length, nilai, ujian_id: ujian.id,
       pelanggaran: tabViolation,
-      mencurigakan: tabViolation >= 2,
+      mencurigakan: tabViolation >= 1,
     };
 
     if (useDemo) {
@@ -5018,7 +5048,7 @@ function StudentExam({ data, onFinish }) {
                     nilai: 0,
                     ujian_id: ujian.id,
                     pelanggaran: tabViolation,
-                    mencurigakan: tabViolation >= 2,
+                    mencurigakan: tabViolation >= 1,
                     is_google_form: true,
                   };
                   submittedRef.current = true;
