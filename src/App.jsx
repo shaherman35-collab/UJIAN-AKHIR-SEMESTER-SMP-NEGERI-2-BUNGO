@@ -42,6 +42,15 @@ const DAFTAR_KELAS = Object.fromEntries(
 // Helper kelas: "7A" → tingkat "7", rombel "A". Data lama ("7", "8", "9") tetap terbaca.
 function normalKelas(k) { return String(k || "").trim().toUpperCase().replace(/\s+/g, ""); }
 function tingkatDari(k) { const m = normalKelas(k).match(/^(\d+)/); return m ? m[1] : ""; }
+// Apakah siswa (mis. "7A") boleh mengikuti ujian untuk kelas tertentu?
+// Kelas ujian "9"  -> semua rombel tingkat 9 (9A, 9B, ...). "9A" -> hanya 9A.
+// Boleh beberapa dipisah koma, mis. "8,9" atau "9A, 9B". Kosong/bukan angka (data lama) -> bebas.
+function kelasBolehIkut(kelasUjian, kelasSiswa) {
+  const daftar = String(kelasUjian || "").split(/[,;/&]|\bdan\b/i).map(normalKelas).filter(Boolean);
+  if (daftar.length === 0 || daftar.every(k => !/^\d/.test(k))) return true;
+  const siswa = normalKelas(kelasSiswa);
+  return daftar.some(k => /^\d+$/.test(k) ? tingkatDari(siswa) === k : siswa === k);
+}
 function urutKelas(a, b) {
   const ta = Number(tingkatDari(a)) || 99, tb = Number(tingkatDari(b)) || 99;
   if (ta !== tb) return ta - tb;
@@ -1589,6 +1598,8 @@ function LoginScreen({ onGuruLogin, onStudentJoin }) {
       }
       if (!ujian) {
         setError("Kode ujian tidak ditemukan atau ujian tidak aktif.");
+      } else if (!kelasBolehIkut(ujian.kelas, form.kelas)) {
+        setError(`Kode ujian ini khusus untuk Kelas ${ujian.kelas}. Anda memilih kelas ${form.kelas}, jadi tidak bisa mengikuti ujian ini.`);
       } else if (!ujian.google_form_url && (!ujian.soal || ujian.soal.length === 0)) {
         setError("Kode ujian ditemukan, tetapi belum ada soal yang ditambahkan. Hubungi guru.");
       } else {
