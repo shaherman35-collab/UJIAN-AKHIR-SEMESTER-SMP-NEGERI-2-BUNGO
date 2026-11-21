@@ -1024,6 +1024,39 @@ const css = `
   .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
   .divider { height: 1px; background: var(--border); margin: 20px 0; }
   .loading { display: flex; align-items: center; justify-content: center; padding: 48px; color: var(--gray); gap: 10px; }
+
+  /* ── Aksen identitas (emas sekolah) ── */
+  .page-header h1::after { content: ""; display: block; width: 44px; height: 3px; background: #f0c020; margin-top: 8px; border-radius: 2px; }
+  .sidebar-menu button.active { box-shadow: inset 3px 0 0 #f0c020; }
+  .sidebar-menu button svg, .sidebar-bottom button svg { flex-shrink: 0; }
+  .sidebar-bottom button { display: flex; align-items: center; gap: 10px; }
+
+  /* ── Skeleton memuat ── */
+  .skel { background: linear-gradient(90deg,#e8edf5 25%,#f4f7fb 37%,#e8edf5 63%); background-size: 400% 100%; animation: skel 1.4s ease infinite; border-radius: 8px; }
+  @keyframes skel { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+  @keyframes toastIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* ── Ujian: judul, progres, ragu-ragu ── */
+  .cbt-title-wrap { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .cbt-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cbt-student-sm { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cbt-progress { height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+  .cbt-progress > div { height: 100%; background: linear-gradient(90deg,#3b82f6,#22c55e); border-radius: 99px; transition: width .3s ease; }
+  .cbt-num-btn.ragu { background: #fef3c7; border-color: #f59e0b; color: #b45309; }
+  .cbt-num-btn.answered.ragu { background: #f59e0b; border-color: #f59e0b; color: #fff; }
+  .btn-ragu { padding: 5px 12px; font-size: 12px; border-radius: 99px; border: 1.5px solid #e2e8f0; background: #fff; color: #64748b; font-weight: 700; cursor: pointer; }
+  .btn-ragu.on { background: #fef3c7; border-color: #f59e0b; color: #b45309; }
+  @media (max-width: 768px) {
+    .cbt-header { height: auto; min-height: 56px; padding: 8px 12px; gap: 10px; }
+    .cbt-header h2 { font-size: 14px; }
+    .cbt-header-info { gap: 8px; flex-shrink: 0; }
+    .cbt-hide-sm { display: none !important; }
+    .cbt-body { padding: 12px 12px 96px; gap: 12px; }
+    .cbt-question-card { padding: 18px; }
+    .cbt-option { padding: 14px; min-height: 56px; }
+    .cbt-nav { position: fixed; left: 0; right: 0; bottom: 0; margin: 0; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid var(--border); box-shadow: 0 -4px 16px rgba(15,23,42,0.08); z-index: 60; gap: 8px; }
+    .cbt-nav .btn { padding: 12px 14px; font-size: 14px; }
+  }
 `;
 
 // ============================================================
@@ -1150,6 +1183,7 @@ export default function App() {
   return (
     <>
       <style>{css}</style>
+      <ToastHost />
       <div className="app">
         {screen === "login" && (
           <LoginScreen
@@ -1173,6 +1207,80 @@ export default function App() {
         )}
       </div>
     </>
+  );
+}
+
+// ============================================================
+// IKON MENU (SVG seragam) • TOAST • SKELETON
+// ============================================================
+const _IKON = {
+  dashboard: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
+  ujian: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h6"/>',
+  soal: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  monitor: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  hasil: '<path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/>',
+  pengumuman: '<path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
+  pengaturan: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1 14h6M9 8h6M17 16h6"/>',
+  keluar: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+};
+function IkonMenu({ name, size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true" dangerouslySetInnerHTML={{ __html: _IKON[name] || "" }} />
+  );
+}
+
+let _toastSetter = null;
+// Pengganti notify(): notifikasi kecil di pojok layar. Pesan panjang / berisi SQL tetap memakai alert agar bisa dibaca & disalin.
+function notify(msg) {
+  const t = String(msg ?? "");
+  if (!_toastSetter || t.length > 160 || t.includes("\n\n")) { window.alert(t); return; }
+  const tipe = /^(✅|🎉|berhasil)/i.test(t) ? "ok" : /gagal|error|tidak bisa|❌/i.test(t) ? "err" : "warn";
+  _toastSetter(list => [...list.slice(-3), { id: Date.now() + Math.random(), t, tipe }]);
+}
+function ToastHost() {
+  const [list, setList] = useState([]);
+  useEffect(() => { _toastSetter = setList; return () => { _toastSetter = null; }; }, []);
+  useEffect(() => {
+    if (!list.length) return;
+    const timer = setTimeout(() => setList(l => l.slice(1)), 4500);
+    return () => clearTimeout(timer);
+  }, [list]);
+  if (!list.length) return null;
+  const warna = { ok: ["#f0fdf4", "#22c55e", "#15803d", "✅"], err: ["#fef2f2", "#ef4444", "#b91c1c", "⛔"], warn: ["#fffbeb", "#f59e0b", "#92400e", "⚠️"] };
+  return (
+    <div style={{ position: "fixed", top: 14, right: 14, zIndex: 100000, display: "flex", flexDirection: "column", gap: 8, width: "min(360px, calc(100vw - 28px))" }}>
+      {list.map(n => {
+        const [bg, bd, fg, ic] = warna[n.tipe];
+        return (
+          <div key={n.id} role="status" style={{ background: bg, border: `1.5px solid ${bd}`, color: fg, borderRadius: 12, padding: "10px 12px", fontSize: 13, fontWeight: 600, lineHeight: 1.45, display: "flex", gap: 8, alignItems: "flex-start", boxShadow: "0 8px 24px rgba(15,23,42,0.15)", animation: "toastIn .2s ease" }}>
+            <span>{ic}</span>
+            <span style={{ flex: 1, whiteSpace: "pre-wrap" }}>{n.t.replace(/^(✅|🎉|❌)\s*/, "")}</span>
+            <button onClick={() => setList(l => l.filter(x => x.id !== n.id))} style={{ background: "transparent", border: "none", color: fg, cursor: "pointer", fontSize: 16, lineHeight: 1 }} aria-label="Tutup">×</button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SkeletonHalaman() {
+  return (
+    <div aria-busy="true">
+      <div className="skel" style={{ height: 28, width: 200, marginBottom: 10 }} />
+      <div className="skel" style={{ height: 14, width: 320, maxWidth: "80%", marginBottom: 28 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 16, marginBottom: 24 }}>
+        {[0, 1, 2, 3].map(i => <div key={i} className="skel" style={{ height: 108, borderRadius: 16 }} />)}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 16 }}>
+        <div className="skel" style={{ height: 240, borderRadius: 16 }} />
+        <div className="skel" style={{ height: 240, borderRadius: 16 }} />
+      </div>
+    </div>
   );
 }
 
@@ -1525,7 +1633,7 @@ function _PortalCard({ role, onClick }) {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        width: "200px", minHeight: "170px",
+        width: "min(260px, 42vw)", minWidth: "150px", minHeight: "190px",
         background: bg,
         border: `3px solid ${isSiswa ? "rgba(144,202,249,0.4)" : "rgba(165,214,167,0.4)"}`,
         borderRadius: "18px",
@@ -1688,18 +1796,53 @@ function LoginScreen({ onGuruLogin, onStudentJoin }) {
         </div>
 
         {/* ── CARDS SECTION ────────────────────────────────────────── */}
-        <div style={{flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"36px 20px", gap:"14px"}}>
-          <p style={{fontSize:"12px", color:"#8899aa", letterSpacing:"1px", textTransform:"uppercase", fontWeight:600, margin:"0 0 6px"}}>Pilih Portal Login</p>
-          <div style={{display:"flex", gap:"28px", flexWrap:"wrap", justifyContent:"center"}}>
+        <div style={{flex:1, position:"relative", display:"flex", flexDirection:"column", alignItems:"center", padding:"36px 20px 40px", gap:"14px", overflow:"hidden",
+          backgroundImage:"radial-gradient(circle at 1px 1px, rgba(26,58,143,0.07) 1px, transparent 0)", backgroundSize:"22px 22px"}}>
+          {/* watermark logo */}
+          <img src={CONFIG.logoUrl} alt="" aria-hidden="true" style={{position:"absolute", right:"-60px", bottom:"-60px", width:"340px", height:"340px", opacity:0.05, borderRadius:"50%", pointerEvents:"none", filter:"grayscale(1)"}} />
+
+          <p style={{fontSize:"12px", color:"#8899aa", letterSpacing:"1px", textTransform:"uppercase", fontWeight:600, margin:"0 0 6px", position:"relative"}}>Pilih Portal Login</p>
+          <div style={{display:"flex", gap:"28px", flexWrap:"wrap", justifyContent:"center", position:"relative"}}>
             <_PortalCard role="siswa" onClick={() => { setModal("siswa"); setError(""); }} />
             <_PortalCard role="admin" onClick={() => { setModal("admin"); setError(""); }} />
           </div>
           {/* Notifikasi dari admin */}
           {loginNotifs.length > 0 && (
-            <div style={{ width: "100%", maxWidth: 440, marginTop: 8 }}>
+            <div style={{ width: "100%", maxWidth: 440, marginTop: 8, position:"relative" }}>
               <NotifBanner notifs={loginNotifs} hapus={hapusLoginNotif} />
             </div>
           )}
+
+          {/* Cara mulai */}
+          <div style={{width:"100%", maxWidth:"760px", marginTop:"26px", position:"relative"}}>
+            <p style={{fontSize:"12px", color:"#8899aa", letterSpacing:"1px", textTransform:"uppercase", fontWeight:700, margin:"0 0 12px", textAlign:"center"}}>Cara Mengikuti Ujian</p>
+            <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:"12px"}}>
+              {[
+                ["1", "Pilih Portal Siswa", "Klik kartu biru lalu isi nama lengkap Anda."],
+                ["2", "Pilih Kelas & Kode", "Pilih kelas Anda dan masukkan kode ujian dari guru."],
+                ["3", "Kerjakan dengan Jujur", "Jawab semua soal sebelum waktu habis, lalu kirim."],
+              ].map(([n, judul, isi]) => (
+                <div key={n} style={{background:"#fff", border:"1px solid #dbe3f0", borderRadius:"14px", padding:"16px", display:"flex", gap:"12px", alignItems:"flex-start", boxShadow:"0 2px 8px rgba(13,37,112,0.05)"}}>
+                  <div style={{width:"32px", height:"32px", borderRadius:"50%", background:"linear-gradient(145deg,#1a3a8f,#0a1e5e)", color:"#f0c020", fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0}}>{n}</div>
+                  <div>
+                    <div style={{fontWeight:800, fontSize:"14px", color:"#0d2570", marginBottom:"3px"}}>{judul}</div>
+                    <div style={{fontSize:"12.5px", color:"#64748b", lineHeight:1.5}}>{isi}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tata tertib */}
+          <div style={{width:"100%", maxWidth:"760px", marginTop:"10px", position:"relative", background:"#fffbeb", border:"1.5px solid #fcd34d", borderRadius:"14px", padding:"16px 18px"}}>
+            <div style={{fontWeight:800, fontSize:"14px", color:"#92400e", marginBottom:"8px"}}>⚠️ Tata Tertib Ujian</div>
+            <ul style={{margin:0, paddingLeft:"18px", fontSize:"13px", color:"#78350f", lineHeight:1.8}}>
+              <li><b>Satu pelanggaran = ujian langsung terkunci.</b> Hanya pengawas yang dapat membukanya.</li>
+              <li>Dilarang berpindah aplikasi, membuka jendela lain, atau menggunakan <b>layar terbelah</b>.</li>
+              <li>Jangan menarik panel notifikasi atau menutup halaman selama ujian berlangsung.</li>
+              <li>Pastikan baterai dan jaringan cukup sebelum memulai. Kerjakan sendiri dengan jujur.</li>
+            </ul>
+          </div>
         </div>
 
         {/* ── FOOTER ───────────────────────────────────────────────── */}
@@ -1855,13 +1998,13 @@ function GuruDashboard({ guru, onLogout }) {
   useEffect(() => { loadData(); }, [loadData]);
 
   const menuItems = [
-    { id: "dashboard",    icon: "📊", label: "Dashboard" },
-    { id: "ujian",        icon: "📋", label: "Kelola Ujian" },
-    { id: "soal",         icon: "✏️", label: "Buat Soal" },
-    { id: "monitor",      icon: "🖥️", label: "Monitor Ujian" },
-    { id: "hasil",        icon: "📈", label: "Hasil Ujian" },
-    { id: "pengumuman",   icon: "📡", label: "Pengumuman" },
-    ...(isAdmin ? [{ id: "pengaturan", icon: "⚙️", label: "Pengaturan" }] : []),
+    { id: "dashboard",    label: "Dashboard" },
+    { id: "ujian",        label: "Kelola Ujian" },
+    { id: "soal",         label: "Buat Soal" },
+    { id: "monitor",      label: "Monitor Ujian" },
+    { id: "hasil",        label: "Hasil Ujian" },
+    { id: "pengumuman",   label: "Pengumuman" },
+    ...(isAdmin ? [{ id: "pengaturan", label: "Pengaturan" }] : []),
   ];
 
   return (
@@ -1880,20 +2023,20 @@ function GuruDashboard({ guru, onLogout }) {
         <div className="sidebar-menu">
           {menuItems.map(m => (
             <button key={m.id} className={page === m.id ? "active" : ""} onClick={() => setPage(m.id)}>
-              {m.icon} {m.label}
+              <IkonMenu name={m.id} /> {m.label}
             </button>
           ))}
         </div>
         <div className="sidebar-bottom">
-          <button onClick={onLogout}>🚪 Keluar</button>
+          <button onClick={onLogout}><IkonMenu name="keluar" /> Keluar</button>
         </div>
       </div>
       <div className="main">
         {loading ? (
-          <div className="loading">⏳ Memuat data...</div>
+          <SkeletonHalaman />
         ) : (
           <>
-            {page === "dashboard"  && <DashboardPage ujianList={ujianList} hasilList={hasilList} />}
+            {page === "dashboard"  && <DashboardPage ujianList={ujianList} hasilList={hasilList} onNavigate={setPage} />}
             {page === "ujian"      && <UjianPage ujianList={ujianList} onRefresh={loadData} />}
             {page === "soal"       && <SoalPage ujianList={ujianList} onRefresh={loadData} />}
             {page === "monitor"    && <MonitorPage ujianList={ujianList} />}
@@ -1929,12 +2072,12 @@ function PengaturanPage({ onSaved }) {
 
   const terapkanSemua = () => {
     const v = Number(semua);
-    if (!Number.isInteger(v) || v < 1 || v > 100) return alert("Isi angka 1–100.");
+    if (!Number.isInteger(v) || v < 1 || v > 100) return notify("Isi angka 1–100.");
     setNilai(Object.fromEntries(MAPEL.map(m => [m, String(v)])));
   };
 
   const simpan = async () => {
-    if (!valid) return alert("Setiap KKM harus berupa angka bulat 1–100.");
+    if (!valid) return notify("Setiap KKM harus berupa angka bulat 1–100.");
     setSaving(true);
     const hasil = await simpanKkm(nilai);
     setSaving(false);
@@ -1944,7 +2087,7 @@ function PengaturanPage({ onSaved }) {
   };
 
   const salinSql = async () => {
-    try { await navigator.clipboard.writeText(SQL_TABEL_KKM); setSalin(true); setTimeout(() => setSalin(false), 2000); } catch { alert(SQL_TABEL_KKM); }
+    try { await navigator.clipboard.writeText(SQL_TABEL_KKM); setSalin(true); setTimeout(() => setSalin(false), 2000); } catch { notify(SQL_TABEL_KKM); }
   };
 
   return (
@@ -2007,7 +2150,42 @@ function PengaturanPage({ onSaved }) {
 }
 
 // ---- Dashboard Overview ----
-function DashboardPage({ ujianList, hasilList }) {
+function KartuUjianAktif({ u, hasilList, onNavigate }) {
+  const [salin, setSalin] = useState(false);
+  const jumlahSoal = (u.soal || []).length;
+  const googleForm = !!u.google_form_url;
+  const masuk = hasilList.filter(h => h.ujian_id === u.id).length;
+  const perlu = !googleForm && jumlahSoal === 0;
+  const salinKode = async () => {
+    try { await navigator.clipboard.writeText(u.key); setSalin(true); setTimeout(() => setSalin(false), 1800); } catch { notify("Kode ujian: " + u.key); }
+  };
+  return (
+    <div style={{ background: "#fff", border: perlu ? "1.5px solid #fcd34d" : "1px solid #e2e8f0", borderRadius: 14, padding: 16, display: "flex", flexDirection: "column", gap: 10, boxShadow: "0 2px 10px rgba(15,23,42,0.05)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}>
+        <div>
+          <div style={{ fontWeight: 800, color: "#0f172a", fontSize: 15 }}>{u.mapel}</div>
+          <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Kelas {u.kelas} • {u.durasi} menit{u.jam_buka || u.jam_tutup ? ` • ${u.jam_buka || "—"}–${u.jam_tutup || "—"}` : ""}</div>
+        </div>
+        <span className="badge badge-green">● Aktif</span>
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 12 }}>
+        <span style={{ background: "#eff6ff", color: "#1d4ed8", borderRadius: 99, padding: "3px 10px", fontWeight: 700 }}>{googleForm ? "Google Form" : `${jumlahSoal} soal`}</span>
+        <span style={{ background: "#f0fdf4", color: "#15803d", borderRadius: 99, padding: "3px 10px", fontWeight: 700 }}>{masuk} sudah mengumpulkan</span>
+        {perlu && <span style={{ background: "#fffbeb", color: "#b45309", borderRadius: 99, padding: "3px 10px", fontWeight: 700 }}>⚠️ Belum ada soal</span>}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", border: "1px dashed #cbd5e1", borderRadius: 10, padding: "8px 10px" }}>
+        <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>KODE</span>
+        <span style={{ fontFamily: "var(--mono)", fontWeight: 900, fontSize: 18, letterSpacing: 2, color: "#0f172a", flex: 1 }}>{u.key}</span>
+        <button className="btn btn-ghost" style={{ padding: "5px 10px", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }} onClick={salinKode}>
+          <IkonMenu name={salin ? "check" : "copy"} size={14} /> {salin ? "Tersalin" : "Salin"}
+        </button>
+      </div>
+      {perlu && onNavigate && <button className="btn btn-blue" style={{ fontSize: 13 }} onClick={() => onNavigate("soal")}>Tambah soal sekarang →</button>}
+    </div>
+  );
+}
+
+function DashboardPage({ ujianList, hasilList, onNavigate }) {
   const rataRata   = hasilList.length ? Math.round(hasilList.reduce((a,h) => a + (h.nilai||0), 0) / hasilList.length) : 0;
   const ujianAktif = ujianList.filter(u => u.aktif).length;
   const lulus      = hasilList.filter(lulusKkm).length;
@@ -2057,13 +2235,43 @@ function DashboardPage({ ujianList, hasilList }) {
         ))}
       </div>
 
-      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:24}}>
+      {/* ── Pintasan ── */}
+      <div style={{display:"flex", gap:10, flexWrap:"wrap", marginBottom:24}}>
+        {[["ujian","plus","Buat Ujian Baru",true],["soal","download","Template & Upload Soal",false],["monitor","monitor","Monitor Ujian",false],["hasil","hasil","Lihat Hasil",false]].map(([id, ik, label, utama]) => (
+          <button key={id} className={`btn ${utama ? "btn-blue" : "btn-ghost"}`} style={{display:"inline-flex", alignItems:"center", gap:8}} onClick={() => onNavigate && onNavigate(id)}>
+            <IkonMenu name={ik} size={16} /> {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Ujian Aktif Hari Ini ── */}
+      <div className="card" style={{marginBottom:24}}>
+        <div className="card-header"><h2>🟢 Ujian Aktif Hari Ini</h2><span className="badge badge-blue">{ujianAktif} ujian</span></div>
+        {ujianAktif === 0 ? (
+          <div style={{textAlign:"center", padding:"22px 10px", color:"#64748b"}}>
+            <div style={{fontSize:34, marginBottom:8}}>🗓️</div>
+            <div style={{fontWeight:700, color:"#1e293b", marginBottom:4}}>Belum ada ujian yang aktif</div>
+            <div style={{fontSize:13, marginBottom:14}}>Buat ujian, tambahkan soal, lalu bagikan kodenya ke siswa.</div>
+            <button className="btn btn-blue" onClick={() => onNavigate && onNavigate("ujian")}>Buat Ujian Pertama</button>
+          </div>
+        ) : (
+          <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:14}}>
+            {ujianList.filter(u => u.aktif).map(u => <KartuUjianAktif key={u.id} u={u} hasilList={hasilList} onNavigate={onNavigate} />)}
+          </div>
+        )}
+      </div>
+
+      <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))", gap:16, marginBottom:24}}>
         {/* ── Bar Chart Distribusi Nilai ── */}
         <div style={{background:"#fff", borderRadius:16, padding:20, boxShadow:"0 2px 12px rgba(0,0,0,0.07)", border:"1px solid #f0f0f0"}}>
           <h3 style={{fontSize:14, fontWeight:700, color:"#1e293b", marginBottom:4}}>📊 Distribusi Nilai</h3>
           <p style={{fontSize:11, color:"#94a3b8", marginBottom:16}}>Sebaran nilai semua ujian</p>
           {hasilList.length === 0 ? (
-            <div style={{textAlign:"center", padding:"24px 0", color:"#cbd5e1", fontSize:13}}>Belum ada data</div>
+            <div style={{textAlign:"center", padding:"18px 8px", color:"#64748b", fontSize:13, lineHeight:1.6}}>
+              <div style={{fontSize:30, marginBottom:6}}>📊</div>
+              Grafik akan muncul setelah siswa selesai mengerjakan ujian.
+              <div style={{marginTop:10}}><button className="btn btn-ghost" style={{fontSize:12}} onClick={() => onNavigate && onNavigate("monitor")}>Buka Monitor Ujian</button></div>
+            </div>
           ) : (
             <div style={{display:"flex", alignItems:"flex-end", gap:8, height:120}}>
               {buckets.map((b,i) => {
@@ -2073,7 +2281,7 @@ function DashboardPage({ ujianList, hasilList }) {
                   <div key={i} style={{flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4}}>
                     <div style={{fontSize:10, fontWeight:700, color: b.count > 0 ? (isLulus?"#15803d":"#b45309") : "#cbd5e1"}}>{b.count}</div>
                     <div style={{
-                      width:"100%", height:`${h}%`,
+                      width:"100%", height:`${b.count === 0 ? 4 : Math.max(8, Math.round((b.count / maxCount) * 80))}px`,
                       background: isLulus ? "linear-gradient(180deg,#22c55e,#15803d)" : "linear-gradient(180deg,#f59e0b,#b45309)",
                       borderRadius:"6px 6px 3px 3px",
                       transition:"height 0.5s ease",
@@ -2136,7 +2344,14 @@ function DashboardPage({ ujianList, hasilList }) {
       <div className="card">
         <div className="card-header"><h2>📝 Hasil Ujian Terbaru</h2></div>
         {hasilList.length === 0 ? (
-          <div className="empty-state"><div className="icon">📭</div><p>Belum ada hasil ujian</p></div>
+          <div className="empty-state">
+            <div className="icon">📭</div>
+            <p style={{marginBottom:14}}>Belum ada hasil ujian. Hasil akan tampil di sini begitu siswa mengumpulkan jawaban.</p>
+            <div style={{display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap"}}>
+              <button className="btn btn-blue" onClick={() => onNavigate && onNavigate("ujian")}>Kelola Ujian</button>
+              <button className="btn btn-ghost" onClick={() => onNavigate && onNavigate("soal")}>Buat Soal</button>
+            </div>
+          </div>
         ) : (
           <div className="table-wrap">
             <table>
@@ -2206,7 +2421,7 @@ function NotifikasiPage() {
         });
         setSent(v => !v);
       } catch (e) {
-        alert("Gagal kirim: " + e.message);
+        notify("Gagal kirim: " + e.message);
       }
     }
     setPesan("");
@@ -2222,7 +2437,7 @@ function NotifikasiPage() {
         await supabase(`pengumuman?id=eq.${id}`, { method: "DELETE", prefer: "return=minimal" });
         setRiwayat(prev => prev.filter(r => r.id !== id));
       } catch (e) {
-        alert("Gagal hapus: " + e.message);
+        notify("Gagal hapus: " + e.message);
       }
     }
     setDeletingId(null);
@@ -2239,7 +2454,7 @@ function NotifikasiPage() {
         await supabase(`pengumuman?id=in.(${ids.join(",")})`, { method: "DELETE", prefer: "return=minimal" });
         setRiwayat([]);
       } catch (e) {
-        alert("Gagal hapus semua: " + e.message);
+        notify("Gagal hapus semua: " + e.message);
       }
     }
     setHapusSuaLoading(false);
@@ -2446,7 +2661,7 @@ function UjianPage({ ujianList, onRefresh }) {
         const { acak_soal, acak_opsi, ...tanpaAcak } = body;
         await supabase(path, { method, body: JSON.stringify(tanpaAcak) });
         if (acak_soal || acak_opsi) {
-          alert("Ujian tersimpan, tetapi pengaturan ACAK belum aktif karena kolomnya belum ada di database.\n\nJalankan di Supabase > SQL Editor:\n\nalter table ujian add column if not exists acak_soal boolean default false, add column if not exists acak_opsi boolean default false;\nnotify pgrst, 'reload schema';");
+          notify("Ujian tersimpan, tetapi pengaturan ACAK belum aktif karena kolomnya belum ada di database.\n\nJalankan di Supabase > SQL Editor:\n\nalter table ujian add column if not exists acak_soal boolean default false, add column if not exists acak_opsi boolean default false;\nnotify pgrst, 'reload schema';");
         }
       } else throw e;
     }
@@ -2459,7 +2674,7 @@ function UjianPage({ ujianList, onRefresh }) {
   };
 
   const handleCreate = async () => {
-    if (!form.kelas.trim()) return alert("Kelas tidak boleh kosong.");
+    if (!form.kelas.trim()) return notify("Kelas tidak boleh kosong.");
     setSaving(true);
     try {
       if (useDemo) {
@@ -2469,12 +2684,12 @@ function UjianPage({ ujianList, onRefresh }) {
       }
       await onRefresh();
       resetForm();
-    } catch(e) { alert("Gagal membuat ujian: " + e.message); }
+    } catch(e) { notify("Gagal membuat ujian: " + e.message); }
     setSaving(false);
   };
 
   const handleEdit = async () => {
-    if (!form.kelas.trim()) return alert("Kelas tidak boleh kosong.");
+    if (!form.kelas.trim()) return notify("Kelas tidak boleh kosong.");
     setSaving(true);
     try {
       if (useDemo) {
@@ -2485,7 +2700,7 @@ function UjianPage({ ujianList, onRefresh }) {
       }
       await onRefresh();
       resetForm();
-    } catch(e) { alert("Gagal edit ujian: " + e.message); }
+    } catch(e) { notify("Gagal edit ujian: " + e.message); }
     setSaving(false);
   };
 
@@ -2497,7 +2712,7 @@ function UjianPage({ ujianList, onRefresh }) {
         const pesertaAktif = await cekPesertaAktif(ujian.id);
         if (pesertaAktif.length > 0) {
           const daftar = pesertaAktif.map(p => `• ${p.nama_siswa} (${p.kelas})`).join("\n");
-          alert(
+          notify(
             `❌ Tidak bisa menghapus ujian ini.\n\n` +
             `Ada ${pesertaAktif.length} peserta yang sedang mengerjakan ujian:\n${daftar}\n\n` +
             `Tunggu sampai semua peserta selesai, atau matikan saklar "Aktif" ujian terlebih dahulu.`
@@ -2564,7 +2779,7 @@ function UjianPage({ ujianList, onRefresh }) {
       setConfirmHapus(null);
     } catch(e) {
       console.error("handleHapus error:", e);
-      alert("Gagal hapus: " + e.message);
+      notify("Gagal hapus: " + e.message);
     }
     setSaving(false);
   };
@@ -2578,7 +2793,7 @@ function UjianPage({ ujianList, onRefresh }) {
         await supabase(`ujian?id=eq.${ujian.id}`, { method: "PATCH", body: JSON.stringify({ aktif: !ujian.aktif }) });
       }
       await onRefresh();
-    } catch(e) { alert("Gagal update: " + e.message); }
+    } catch(e) { notify("Gagal update: " + e.message); }
   };
 
   const bukaFormEdit = (ujian) => {
@@ -2705,7 +2920,7 @@ function UjianPage({ ujianList, onRefresh }) {
               <div className="key">{showKey.key}</div>
               <p>Kelas {showKey.kelas} • {showKey.durasi} menit</p>
             </div>
-            <button className="btn btn-blue" style={{width:"100%"}} onClick={() => { navigator.clipboard?.writeText(showKey.key); alert("Kode disalin!"); }}>📋 Salin Kode</button>
+            <button className="btn btn-blue" style={{width:"100%"}} onClick={() => { navigator.clipboard?.writeText(showKey.key); notify("Kode disalin!"); }}>📋 Salin Kode</button>
             <div style={{height:"8px"}}/>
             <button className="btn btn-ghost" style={{width:"100%"}} onClick={() => setShowKey(null)}>Tutup</button>
           </div>
@@ -2911,9 +3126,9 @@ function SoalPage({ ujianList, onRefresh }) {
 
   // Cetak / Simpan sebagai PDF (pakai dialog print browser)
   const handleCetakPDF = (withKunci) => {
-    if (soalList.length === 0) return alert("Belum ada soal untuk dicetak.");
+    if (soalList.length === 0) return notify("Belum ada soal untuk dicetak.");
     const win = window.open("", "_blank");
-    if (!win) return alert("Popup diblokir. Izinkan popup untuk situs ini, lalu coba lagi.");
+    if (!win) return notify("Popup diblokir. Izinkan popup untuk situs ini, lalu coba lagi.");
     win.document.write(buatHtmlSoal(withKunci));
     win.document.close();
     // Beri jeda agar gambar sempat dimuat sebelum dialog print
@@ -2922,7 +3137,7 @@ function SoalPage({ ujianList, onRefresh }) {
 
   // Download sebagai file Word (.doc)
   const handleDownloadWord = (withKunci) => {
-    if (soalList.length === 0) return alert("Belum ada soal untuk diunduh.");
+    if (soalList.length === 0) return notify("Belum ada soal untuk diunduh.");
     const u = ujianList.find(uj => String(uj.id) === selectedUjian);
     const html = buatHtmlSoal(withKunci);
     const blob = new Blob(["\ufeff", html], { type: "application/msword" });
@@ -2937,14 +3152,14 @@ function SoalPage({ ujianList, onRefresh }) {
   };
 
   const handleSave = async () => {
-    if (!selectedUjian) return alert("Pilih ujian terlebih dahulu.");
-    if (!form.pertanyaan.trim()) return alert("Pertanyaan tidak boleh kosong.");
+    if (!selectedUjian) return notify("Pilih ujian terlebih dahulu.");
+    if (!form.pertanyaan.trim()) return notify("Pertanyaan tidak boleh kosong.");
     const isianForm = form.tipe === "isian";
     if (isianForm) {
-      if (daftarKunciIsian({ kunci_isian: form.kunciIsian }).length === 0) return alert("Kunci jawaban isian harus diisi.");
-    } else if (form.opsi.some(o => !o.trim())) return alert("Semua opsi harus diisi.");
+      if (daftarKunciIsian({ kunci_isian: form.kunciIsian }).length === 0) return notify("Kunci jawaban isian harus diisi.");
+    } else if (form.opsi.some(o => !o.trim())) return notify("Semua opsi harus diisi.");
     const bobotNum = parseBobot(form.bobot);
-    if (String(form.bobot).trim() && bobotNum === null) return alert("Bobot harus berupa angka lebih dari 0 (contoh: 2 atau 2.5).");
+    if (String(form.bobot).trim() && bobotNum === null) return notify("Bobot harus berupa angka lebih dari 0 (contoh: 2 atau 2.5).");
     const bobotSimpan = bobotNum === null ? 1 : bobotNum;
     const kunciForm = (form.kunci && form.kunci.length ? [...form.kunci] : [0]).sort((a, b) => a - b);
     const kunciExtra = isianForm
@@ -2973,7 +3188,7 @@ function SoalPage({ ujianList, onRefresh }) {
         await onRefresh();
         setSoalList(prev => prev.map(s => s.id === editSoal.id ? { ...s, ...form, opsi: opsiSimpan, bobot: bobotSimpan, ...kunciExtra, ...tipeExtra } : s));
         resetForm();
-        if (!bobotTersimpan) alert(pesanKolomBobot());
+        if (!bobotTersimpan) notify(pesanKolomBobot());
       } else {
         // MODE TAMBAH BARU
         const soalBaru = { ...form, opsi: opsiSimpan, bobot: bobotSimpan, ...kunciExtra, ...tipeExtra, id: Date.now() };
@@ -2986,9 +3201,9 @@ function SoalPage({ ujianList, onRefresh }) {
         await onRefresh();
         setSoalList(prev => [...prev, soalBaru]);
         resetForm();
-        if (!bobotTersimpan) alert(pesanKolomBobot());
+        if (!bobotTersimpan) notify(pesanKolomBobot());
       }
-    } catch(e) { alert("Gagal menyimpan: " + e.message); }
+    } catch(e) { notify("Gagal menyimpan: " + e.message); }
     setSaving(false);
   };
 
@@ -3006,7 +3221,7 @@ function SoalPage({ ujianList, onRefresh }) {
       if (!useDemo && selectedUjian) {
         const pesertaAktif = await cekPesertaAktif(Number(selectedUjian));
         if (pesertaAktif.length > 0) {
-          alert(
+          notify(
             `❌ Tidak bisa menghapus soal.\n\n` +
             `Ada ${pesertaAktif.length} peserta yang sedang mengerjakan ujian ini. ` +
             `Soal yang sudah ter-load di browser mereka akan kacau jika dihapus sekarang.\n\n` +
@@ -3025,7 +3240,7 @@ function SoalPage({ ujianList, onRefresh }) {
       await onRefresh();
       setSoalList(prev => prev.filter(s => s.id !== soalId));
       if (editSoal?.id === soalId) resetForm();
-    } catch(e) { alert("Gagal hapus: " + e.message); }
+    } catch(e) { notify("Gagal hapus: " + e.message); }
   };
 
   const handleHapusSemua = async () => {
@@ -3036,7 +3251,7 @@ function SoalPage({ ujianList, onRefresh }) {
         const pesertaAktif = await cekPesertaAktif(Number(selectedUjian));
         if (pesertaAktif.length > 0) {
           const daftar = pesertaAktif.map(p => `• ${p.nama_siswa} (${p.kelas})`).join("\n");
-          alert(
+          notify(
             `❌ Tidak bisa menghapus semua soal.\n\n` +
             `Ada ${pesertaAktif.length} peserta yang sedang mengerjakan:\n${daftar}\n\n` +
             `Tunggu sampai mereka selesai dulu.`
@@ -3057,7 +3272,7 @@ function SoalPage({ ujianList, onRefresh }) {
       setSoalList([]);
       setHapusSemua(false);
       resetForm();
-    } catch(e) { alert("Gagal hapus: " + e.message); }
+    } catch(e) { notify("Gagal hapus: " + e.message); }
     setSaving(false);
   };
 
@@ -3262,7 +3477,7 @@ function SoalPage({ ujianList, onRefresh }) {
   };
 
   const handleImport = async () => {
-    if (!selectedUjian) return alert("Pilih ujian terlebih dahulu.");
+    if (!selectedUjian) return notify("Pilih ujian terlebih dahulu.");
     if (previewSoal.length === 0) return;
     setImporting(true);
     let berhasil = 0;
@@ -3281,7 +3496,7 @@ function SoalPage({ ujianList, onRefresh }) {
       await onRefresh();
       setPreviewSoal([]);
       setUploadStatus(`🎉 ${berhasil} soal berhasil diimport!`);
-      if (!bobotTersimpan) alert(pesanKolomBobot());
+      if (!bobotTersimpan) notify(pesanKolomBobot());
     } catch(e) {
       setUploadStatus(`❌ Gagal import soal ke-${berhasil+1}: ${e.message}`);
     }
@@ -3307,14 +3522,44 @@ function SoalPage({ ujianList, onRefresh }) {
   return (
     <>
       <div className="page-header"><h1>Buat Soal</h1><p>Tambahkan soal ke ujian yang sudah dibuat</p></div>
+      {/* Langkah */}
+      <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginBottom:"16px"}}>
+        {[["1","Pilih ujian", !selectedUjian],["2","Pilih cara input soal", !!selectedUjian && soalList.length === 0],["3","Tinjau daftar soal", !!selectedUjian && soalList.length > 0]].map(([n, label, aktif]) => (
+          <div key={n} style={{display:"flex", alignItems:"center", gap:"8px", padding:"7px 14px", borderRadius:"99px", fontSize:"13px", fontWeight:700,
+            background: aktif ? "var(--navy)" : "#fff", color: aktif ? "#fff" : "var(--gray)", border: aktif ? "1.5px solid var(--navy)" : "1.5px solid var(--border)"}}>
+            <span style={{width:"22px", height:"22px", borderRadius:"50%", background: aktif ? "#f0c020" : "var(--light)", color: aktif ? "var(--navy)" : "var(--gray)", display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:"12px", fontWeight:900}}>{n}</span>
+            {label}
+          </div>
+        ))}
+      </div>
+
       <div className="card">
-        <div className="card-header"><h2>Pilih Ujian</h2></div>
-        <div className="form-field" style={{maxWidth:"360px"}}>
-          <select value={selectedUjian} onChange={e => setSelectedUjian(e.target.value)}>
-            <option value="">-- Pilih Ujian --</option>
-            {ujianList.map(u => <option key={u.id} value={u.id}>{u.mapel} - Kelas {u.kelas}</option>)}
-          </select>
-        </div>
+        <div className="card-header"><h2>1. Pilih Ujian</h2><span className="badge badge-blue">{ujianList.length} ujian</span></div>
+        {ujianList.length === 0 ? (
+          <div className="empty-state" style={{padding:"24px"}}><div className="icon">📋</div><p>Belum ada ujian. Buat ujian dulu di menu <strong>Kelola Ujian</strong>, lalu kembali ke sini untuk menambah soal.</p></div>
+        ) : (
+          <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))", gap:"12px"}}>
+            {ujianList.map(u => {
+              const pilih = String(u.id) === String(selectedUjian);
+              const n = (u.soal || []).length;
+              return (
+                <button key={u.id} type="button" onClick={() => setSelectedUjian(String(u.id))}
+                  style={{textAlign:"left", cursor:"pointer", borderRadius:"14px", padding:"14px", background: pilih ? "var(--blue3)" : "#fff", border: pilih ? "2px solid var(--blue2)" : "1.5px solid var(--border)", boxShadow: pilih ? "0 4px 14px rgba(37,99,235,0.15)" : "none", display:"flex", flexDirection:"column", gap:"6px"}}>
+                  <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", gap:"8px"}}>
+                    <strong style={{fontSize:"14px", color:"var(--navy)"}}>{u.mapel}</strong>
+                    {pilih && <span style={{color:"var(--blue2)", fontWeight:800, fontSize:"12px"}}>✓ Dipilih</span>}
+                  </div>
+                  <div style={{fontSize:"12px", color:"var(--gray)"}}>Kelas {u.kelas} • {u.durasi} menit</div>
+                  <div style={{display:"flex", gap:"6px", flexWrap:"wrap"}}>
+                    <span className="badge badge-blue">{u.google_form_url ? "Google Form" : `${n} soal`}</span>
+                    {!u.google_form_url && n === 0 && <span className="badge badge-yellow">Belum ada soal</span>}
+                    {!u.aktif && <span className="badge badge-red">Nonaktif</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── DOWNLOAD TEMPLATE: selalu tampil, tidak perlu pilih ujian dulu ── */}
@@ -3734,15 +3979,15 @@ function SoalPage({ ujianList, onRefresh }) {
                 <button
                   className="btn btn-green"
                   onClick={() => {
-                    if (!googleFormUrl.trim()) return alert("Masukkan link Google Form terlebih dahulu.");
-                    if (!selectedUjian) return alert("Pilih ujian terlebih dahulu.");
+                    if (!googleFormUrl.trim()) return notify("Masukkan link Google Form terlebih dahulu.");
+                    if (!selectedUjian) return notify("Pilih ujian terlebih dahulu.");
                     const u = ujianList.find(u => String(u.id) === selectedUjian);
                     if (useDemo) {
                       const idx = DEMO_UJIAN.findIndex(u => String(u.id) === selectedUjian);
                       if (idx > -1) DEMO_UJIAN[idx].google_form_url = googleFormUrl;
                       setGoogleFormSaved(true);
                       setTimeout(() => onRefresh(), 500);
-                      alert("✅ Link Google Form berhasil disimpan ke ujian ini!");
+                      notify("✅ Link Google Form berhasil disimpan ke ujian ini!");
                     } else {
                       supabase("ujian?id=eq." + selectedUjian, {
                         method: "PATCH",
@@ -3750,17 +3995,17 @@ function SoalPage({ ujianList, onRefresh }) {
                       }).then(() => {
                         setGoogleFormSaved(true);
                         onRefresh();
-                        alert("✅ Link Google Form berhasil disimpan ke ujian ini!");
+                        notify("✅ Link Google Form berhasil disimpan ke ujian ini!");
                       }).catch(e => {
                         if (e.message && e.message.includes("google_form_url")) {
-                          alert(
+                          notify(
                             "❌ Kolom 'google_form_url' belum ada di database Supabase.\n\n" +
                             "Silakan jalankan SQL berikut di Supabase Dashboard → SQL Editor:\n\n" +
                             "ALTER TABLE ujian ADD COLUMN IF NOT EXISTS google_form_url TEXT;\n\n" +
                             "Setelah dijalankan, coba simpan lagi."
                           );
                         } else {
-                          alert("Gagal simpan: " + e.message);
+                          notify("Gagal simpan: " + e.message);
                         }
                       });
                     }
@@ -3962,7 +4207,7 @@ function MonitorPage({ ujianList }) {
   const bukaKunci = (nama, kelas) => {
     const key = `${nama}_${kelas}`;
     saveUnlocked([...unlockedSiswa.filter(k => k !== key), key]);
-    alert(`✅ Kunci ujian ${nama} (${kelas}) berhasil dicatat!\nMinta pengawas masukkan kode 2026 di layar kunci siswa.`);
+    notify(`✅ Kunci ujian ${nama} (${kelas}) berhasil dicatat!\nMinta pengawas masukkan kode 2026 di layar kunci siswa.`);
   };
 
   // Hitung status koneksi peserta berdasarkan last_heartbeat
@@ -4247,8 +4492,8 @@ function BukaKunciManual({ onBukaKunci }) {
   const [success, setSuccess] = useState(false);
 
   const handleBuka = () => {
-    if (!nama.trim()) return alert("Isi nama siswa terlebih dahulu.");
-    if (!kelas.trim()) return alert("Isi kelas siswa terlebih dahulu.");
+    if (!nama.trim()) return notify("Isi nama siswa terlebih dahulu.");
+    if (!kelas.trim()) return notify("Isi kelas siswa terlebih dahulu.");
     onBukaKunci(nama.trim(), kelas.trim());
     setSuccess(true);
     setTimeout(() => setSuccess(false), 3000);
@@ -4310,6 +4555,7 @@ function hitungStatKelas(rows) {
 
 function HasilPage({ hasilList, ujianList }) {
   const [tabView, setTabView] = useState("kelas"); // kelas | siswa | curiga
+  const [tampilSemuaKelas, setTampilSemuaKelas] = useState(false);
   const [fTingkat, setFTingkat] = useState("");
   const [fKelas, setFKelas] = useState("");
   const [fMapel, setFMapel] = useState("");
@@ -4340,6 +4586,7 @@ function HasilPage({ hasilList, ujianList }) {
 
   const rekap = semuaKelas.map(k => ({ kelas: k, ...hitungStatKelas(base.filter(h => kelasLabel(h) === k)) }));
   const kelasSudahUjian = rekap.filter(r => r.n > 0).length;
+  const rekapTampil = tampilSemuaKelas ? rekap : rekap.filter(r => r.n > 0);
   const ringkas = hitungStatKelas(tabView === "kelas" ? base.filter(h => inTingkat(h.kelas)) : filtered);
 
   // Pengelompokan siswa per kelas
@@ -4359,7 +4606,7 @@ function HasilPage({ hasilList, ujianList }) {
   const HEADER_SISWA = ["No", "Nama", "Kelas", "Mata Pelajaran", "Benar", "Total", "Nilai", "KKM", "Status", "Pelanggaran", "Mencurigakan"];
 
   const exportCSV = () => {
-    if (filtered.length === 0) return alert("Belum ada data untuk diexport.");
+    if (filtered.length === 0) return notify("Belum ada data untuk diexport.");
     const urut = [...filtered].sort((a, b) => urutKelas(kelasLabel(a), kelasLabel(b)) || byNama(a, b));
     const esc = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
     const csv = "\uFEFF" + [HEADER_SISWA, ...barisSiswa(urut)].map(r => r.map(esc).join(",")).join("\r\n");
@@ -4371,7 +4618,7 @@ function HasilPage({ hasilList, ujianList }) {
 
   // Excel: sheet "Rekap Kelas" + satu sheet per kelas berisi nilai siswa
   const exportExcel = async () => {
-    if (filtered.length === 0) return alert("Belum ada data untuk diexport.");
+    if (filtered.length === 0) return notify("Belum ada data untuk diexport.");
     setExporting(true);
     try {
       const XLSX = await muatXLSX();
@@ -4394,7 +4641,7 @@ function HasilPage({ hasilList, ujianList }) {
       });
       XLSX.writeFile(wb, `Rekap-Nilai-${fKelas || (fTingkat ? "Kelas" + fTingkat : "Semua-Kelas")}-${fMapel || "Semua-Mapel"}.xlsx`);
     } catch (e) {
-      alert("Gagal membuat file Excel: " + e.message);
+      notify("Gagal membuat file Excel: " + e.message);
     }
     setExporting(false);
   };
@@ -4468,10 +4715,36 @@ function HasilPage({ hasilList, ujianList }) {
           ))}
         </div>
 
+        {/* ── KISI STATUS KELAS ── */}
+        {tabView === "kelas" && (
+          <div style={{background:"#f8fafc", border:"1px solid var(--border)", borderRadius:"var(--radius2)", padding:"14px 16px", marginBottom:"16px"}}>
+            <div style={{fontSize:"12px", fontWeight:700, color:"var(--gray)", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:"10px"}}>
+              Status ujian per kelas <span style={{fontWeight:500, textTransform:"none"}}>— hijau = sudah ada hasil, abu-abu = belum</span>
+            </div>
+            {TINGKAT_KELAS.filter(t => !fTingkat || t === fTingkat).map(t => (
+              <div key={t} style={{display:"flex", alignItems:"center", gap:"8px", flexWrap:"wrap", marginBottom:"8px"}}>
+                <div style={{width:"64px", fontSize:"13px", fontWeight:800, color:"var(--navy)"}}>Kelas {t}</div>
+                {ROMBEL_KELAS.map(r => {
+                  const k = t + r; const row = rekap.find(x => x.kelas === k);
+                  const ada = row && row.n > 0;
+                  return (
+                    <button key={k} type="button" disabled={!ada} title={ada ? `${k}: ${row.n} peserta, rata-rata ${row.rata}` : `${k}: belum ujian`}
+                      onClick={() => ada && lihatSiswaKelas(k)}
+                      style={{minWidth:"54px", padding:"6px 8px", borderRadius:"10px", border: ada ? "1.5px solid #22c55e" : "1.5px solid #e2e8f0", background: ada ? "#f0fdf4" : "#fff", color: ada ? "#15803d" : "#94a3b8", fontSize:"12px", fontWeight:800, cursor: ada ? "pointer" : "default", lineHeight:1.2}}>
+                      {k}
+                      <div style={{fontSize:"10px", fontWeight:600, fontFamily:"var(--mono)"}}>{ada ? row.rata : "—"}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ── REKAP PER KELAS ── */}
         {tabView === "kelas" && (
-          rekap.length === 0 ? (
-            <div className="empty-state"><div className="icon">🏫</div><p>Belum ada data kelas</p></div>
+          rekapTampil.length === 0 ? (
+            <div className="empty-state" style={{padding:"28px"}}><div className="icon">🏫</div><p>Belum ada hasil ujian yang masuk. Kelas yang sudah ujian akan muncul di tabel ini.</p></div>
           ) : (
             <div className="table-wrap">
               <table>
@@ -4482,7 +4755,7 @@ function HasilPage({ hasilList, ujianList }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {rekap.map(r => (
+                  {rekapTampil.map(r => (
                     <tr key={r.kelas} style={{opacity: r.n === 0 ? 0.5 : 1}}>
                       <td><strong>{r.kelas}</strong></td>
                       {r.n === 0 ? (
@@ -4507,6 +4780,14 @@ function HasilPage({ hasilList, ujianList }) {
               </table>
             </div>
           )
+        )}
+
+        {tabView === "kelas" && rekap.some(r => r.n === 0) && (
+          <div style={{marginTop:"12px", textAlign:"center"}}>
+            <button className="btn btn-ghost" style={{fontSize:"12px"}} onClick={() => setTampilSemuaKelas(v => !v)}>
+              {tampilSemuaKelas ? "Sembunyikan kelas yang belum ujian" : `Tampilkan semua kelas (${rekap.length})`}
+            </button>
+          </div>
         )}
 
         {/* ── NILAI PER SISWA (dikelompokkan per kelas) ── */}
@@ -4570,6 +4851,7 @@ function StudentExam({ data, onFinish }) {
   const [soal] = useState(() => shuffleSoalDanOpsi(ujian.soal, !!ujian.acak_soal, !!ujian.acak_opsi));
   const [current, setCurrent] = useState(0);
   const [jawaban, setJawaban] = useState(Array(soal.length).fill(null));
+  const [ragu, setRagu] = useState(() => Array(soal.length).fill(false));   // tanda "ragu-ragu" per soal
   const [timeLeft, setTimeLeft] = useState(ujian.durasi * 60);
   const [showReview, setShowReview] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -5014,7 +5296,7 @@ function StudentExam({ data, onFinish }) {
               <div key={i} style={{background:"white", borderRadius:"var(--radius2)", padding:"16px", border:`2px solid ${!adaJawaban(jawaban[i]) ? "var(--red)" : "var(--border)"}`, cursor:"pointer"}} onClick={() => { setShowReview(false); setCurrent(i); }}>
                 <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:"12px"}}>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:"12px", fontWeight:"700", color:"var(--blue)", marginBottom:"4px"}}>Soal {i+1}</div>
+                    <div style={{fontSize:"12px", fontWeight:"700", color:"var(--blue)", marginBottom:"4px"}}>Soal {i+1} {ragu[i] && <span style={{color:"#b45309", background:"#fef3c7", borderRadius:"99px", padding:"1px 8px", marginLeft:"6px"}}>🚩 Ragu-ragu</span>}</div>
                     <div style={{fontSize:"14px", color:"var(--navy)", marginBottom:"8px"}}>{s.pertanyaan.length > 80 ? s.pertanyaan.slice(0,80)+"..." : s.pertanyaan}</div>
                     {adaJawaban(jawaban[i]) ? (
                       <span style={{fontSize:"12px", padding:"3px 10px", borderRadius:"99px", background:"var(--blue3)", color:"var(--blue2)", fontWeight:"600"}}>
@@ -5238,17 +5520,19 @@ function StudentExam({ data, onFinish }) {
 
       <NotifToast notifs={examNotifs} hapus={hapusExamNotif} />
       <div className="cbt-header">
-        <h2>📝 {ujian.mapel} — Kelas {ujian.kelas}</h2>
+        <div className="cbt-title-wrap">
+          <h2 className="cbt-title">📝 {ujian.mapel} — Kelas {ujian.kelas}</h2>
+          <div className="cbt-student-info cbt-student-sm">👤 {siswa.nama} ({siswa.kelas})</div>
+        </div>
         <div className="cbt-header-info">
-          <div className="cbt-student-info">👤 {siswa.nama} ({siswa.kelas})</div>
           {tabViolation > 0 && (
             <div style={{background:"rgba(239,68,68,0.3)",borderRadius:"8px",padding:"4px 10px",fontSize:"12px",color:"#fca5a5",fontWeight:"700"}}>⚠️ {tabViolation}/{MAX_VIOLATIONS}</div>
           )}
-          <div style={{background:isFullscreen?"rgba(34,197,94,0.2)":"rgba(239,68,68,0.2)",borderRadius:"8px",padding:"4px 10px",fontSize:"12px",color:isFullscreen?"#86efac":"#fca5a5",cursor:"pointer"}} onClick={enterFullscreen}>
+          <div className="cbt-hide-sm" style={{background:isFullscreen?"rgba(34,197,94,0.2)":"rgba(239,68,68,0.2)",borderRadius:"8px",padding:"4px 10px",fontSize:"12px",color:isFullscreen?"#86efac":"#fca5a5",cursor:"pointer"}} onClick={enterFullscreen}>
             {isFullscreen ? "🔒 Fullscreen" : "⚠️ Klik Fullscreen"}
           </div>
           {wakeLockAktif && (
-            <div title="Layar HP dipaksa tetap menyala selama ujian" style={{background:"rgba(59,130,246,0.2)",borderRadius:"8px",padding:"4px 10px",fontSize:"12px",color:"#93c5fd"}}>
+            <div className="cbt-hide-sm" title="Layar HP dipaksa tetap menyala selama ujian" style={{background:"rgba(59,130,246,0.2)",borderRadius:"8px",padding:"4px 10px",fontSize:"12px",color:"#93c5fd"}}>
               🔆 Layar Aktif
             </div>
           )}
@@ -5259,7 +5543,19 @@ function StudentExam({ data, onFinish }) {
       <div className="cbt-body">
         <div className="cbt-main">
           <div className="cbt-question-card">
-            <div className="cbt-q-num">Soal {current + 1} dari {soal.length}</div>
+            <div style={{marginBottom:"14px"}}>
+              <div style={{display:"flex", justifyContent:"space-between", fontSize:"11px", color:"var(--gray)", fontWeight:700, marginBottom:"5px"}}>
+                <span>Terjawab {dijawab} dari {soal.length}</span><span>{soal.length ? Math.round((dijawab / soal.length) * 100) : 0}%</span>
+              </div>
+              <div className="cbt-progress"><div style={{width:`${soal.length ? (dijawab / soal.length) * 100 : 0}%`}} /></div>
+            </div>
+            <div className="cbt-q-num" style={{display:"flex", justifyContent:"space-between", alignItems:"center", gap:"8px"}}>
+              <span>Soal {current + 1} dari {soal.length}</span>
+              <button type="button" className={`btn-ragu ${ragu[current] ? "on" : ""}`} disabled={locked}
+                onClick={() => setRagu(r => r.map((v, i) => i === current ? !v : v))}>
+                🚩 {ragu[current] ? "Ragu-ragu ✓" : "Ragu-ragu"}
+              </button>
+            </div>
             <div className="cbt-q-text"><MathText text={soal[current].pertanyaan} /></div>
             {soal[current].gambar && (
               <div style={{margin:"12px 0 20px", borderRadius:"var(--radius2)", overflow:"hidden", border:"1px solid var(--border)", textAlign:"center", background:"var(--light)"}}>
@@ -5331,7 +5627,7 @@ function StudentExam({ data, onFinish }) {
             <h3>Navigasi Soal</h3>
             <div className="cbt-num-grid">
               {soal.map((_, i) => (
-                <button key={i} className={`cbt-num-btn ${adaJawaban(jawaban[i]) ? "answered" : ""} ${current === i ? "current" : ""}`} onClick={() => setCurrent(i)}>{i+1}</button>
+                <button key={i} className={`cbt-num-btn ${adaJawaban(jawaban[i]) ? "answered" : ""} ${ragu[i] ? "ragu" : ""} ${current === i ? "current" : ""}`} onClick={() => setCurrent(i)}>{i+1}</button>
               ))}
             </div>
           </div>
@@ -5339,6 +5635,7 @@ function StudentExam({ data, onFinish }) {
             <div className="cbt-legend">
               <span><div className="cbt-legend-dot answered"></div>Sudah dijawab</span>
               <span><div className="cbt-legend-dot"></div>Belum dijawab</span>
+              <span><div className="cbt-legend-dot" style={{background:"#f59e0b"}}></div>Ragu-ragu</span>
             </div>
           </div>
           <button className="btn btn-green" style={{width:"100%", marginBottom:"8px"}} onClick={() => setShowReview(true)} disabled={locked}>📋 Review Jawaban</button>
